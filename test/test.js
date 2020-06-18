@@ -8,9 +8,9 @@ const stdio = require('stdio');
 const fs = require('fs');
 const CommonUtils = require('../common/index');
 const Decimal = require('../common/crypto/decimal-light');
-const  DEFAULT_AMOUNT = '1000';
-const DEFAULT_USERNAME = 'BGQCUO55L57O266P';
-
+const DEFAULT_AMOUNT = '1000';
+const DEFAULT_USERNAME = 'POMEW4B5XACN3ZCX';
+const DEFAULT_PASSWORD = 'TVZS7LODA5CSGP6U';
 const ops = stdio.getopt({
   'symbol': {key: 's', args: 1, description: 'Select a symbol to run test.'},
   'amount': {key: 'a', args: 1, description: 'Transaction amount. (Defaults to ' + DEFAULT_AMOUNT + ')'},
@@ -35,7 +35,7 @@ if (!ops.symbol) {
 
 let coinSpecificTestData = {};
 const username = ops.username || DEFAULT_USERNAME;
-const password = ops.password || '6WAE5LYKAADLZ4P3YLE3EGBSNUKMLV4VGU4UJ6JZV7SEE276';
+const password = ops.password || DEFAULT_PASSWORD;
 
 console.log(' [=] SESSION ================================================');
 console.log(' [.] username            : ' + username + (username===DEFAULT_USERNAME?' [DEFAULT]':''));
@@ -62,7 +62,7 @@ if (typeof ops.unspent === 'string') {
 }
 
 const fee = ops.fee;
-const target = ops.target;
+let target = ops.target;
 
 const Hybrix = require('../interface/hybrix-lib.nodejs.js');
 const hybrix = new Hybrix.Interface({http: require('http')});
@@ -135,7 +135,12 @@ function outputResults (result) {
   coinSpecificTestData = result.test;
 
   if (typeof result.sample === 'object') {
-    console.log(' [.] Sample address     : ' + result.sample.address);
+    if(!target){
+      console.log(' [.] Sample address     : ' + result.sample.address + '[Using as target]');
+      target = result.sample.address;
+    }else{
+      console.log(' [.] Sample address     : ' + result.sample.address);
+    }
     console.log(' [.] Sample transaction : ' + result.sample.transaction);
   } else {
     console.log(' [!] No sample available.');
@@ -160,7 +165,9 @@ let toIntLocal = function (input, factor) {
 
 function createTransaction (data, dataCallback, errorCallback) {
 
-  if(new Decimal(data.balance).times(new Decimal(10).pow(data.result.details.factor)).lt(new Decimal(amount))){
+  if(typeof data.balance === 'undefined'){
+    console.log(' [!] Balance           : undefined [Failed to retrieve balance]');
+  }else if(new Decimal(data.balance).times(new Decimal(10).pow(data.result.details.factor)).lt(new Decimal(amount))){
     console.log(' [!] Balance           : ' + data.balance + ' ' + data.result.details.symbol.toUpperCase()+ ' [Insufficient]');
   }else{
     console.log(' [.] Balance           : ' + data.balance + ' ' + data.result.details.symbol.toUpperCase());
@@ -173,6 +180,8 @@ function createTransaction (data, dataCallback, errorCallback) {
   } else if (coinSpecificTestData && coinSpecificTestData.hasOwnProperty('unspent')) {
     actualUnspent = coinSpecificTestData.unspent;
     console.log(' [.] Unspents           : ' + JSON.stringify(actualUnspent) + ' (Coin specific test data )');
+  } else if(typeof data.unspent ==='undefined'){
+    console.log(' [!] Unspents           : undefined [Failed to retrieve unspents]');
   } else {
     actualUnspent = data.unspent;
     console.log(' [.] Unspents           : ' + JSON.stringify(actualUnspent));
@@ -187,7 +196,7 @@ function createTransaction (data, dataCallback, errorCallback) {
     fee: toIntLocal(typeof fee === 'undefined' ? data.result.details.fee : fee, data.result.details['fee-factor']),
     keys: data.result.keys,
     source: data.result.address,
-    target: target || data.result.address,
+    target: target,
     contract: data.result.details.contract,
     mode: subMode, // deterministic expects the submode, not the entire mode
     unspent: actualUnspent,
@@ -219,19 +228,24 @@ function optionalPushToTargetChain (signedTrxData) {
 }
 
 function outputAndCheckHash (signedTrxDataAndHash) {
-  console.log(' [.] Transaction        :', signedTrxDataAndHash.signedTrxData);
-  console.log(' [.] Transaction Hash   :', signedTrxDataAndHash.hash);
 
-  if (coinSpecificTestData.hasOwnProperty('hash')) {
-    if (signedTrxDataAndHash.hash === coinSpecificTestData.hash) {
-      console.log(' [v] Test Hash          :', coinSpecificTestData.hash, '[MATCH]');
-    } else if (coinSpecificTestData.hash === 'dynamic') {
-      console.log(' [i] Test Hash          :', 'dynamic');
+  if(username !== 'POMEW4B5XACN3ZCX'){
+    console.log(' [i] Skipping hash comparison as the test user POMEW4B5XACN3ZCX is not used');
+  }else{
+    console.log(' [.] Transaction        :', signedTrxDataAndHash.signedTrxData);
+    console.log(' [.] Transaction Hash   :', signedTrxDataAndHash.hash);
+
+    if (coinSpecificTestData.hasOwnProperty('hash')) {
+      if (signedTrxDataAndHash.hash === coinSpecificTestData.hash) {
+        console.log(' [v] Test Hash          :', coinSpecificTestData.hash, '[MATCH]');
+      } else if (coinSpecificTestData.hash === 'dynamic') {
+        console.log(' [i] Test Hash          :', 'dynamic');
+      } else {
+        console.log(' [!] Test Hash          :', coinSpecificTestData.hash, '[NO MATCH!]');
+      }
     } else {
-      console.log(' [!] Test Hash          :', coinSpecificTestData.hash, '[NO MATCH!]');
+      console.log(' [i] Test Hash          :', 'NOT AVAILABLE');
     }
-  } else {
-    console.log(' [i] Test Hash          :', 'NOT AVAILABLE');
   }
 }
 

@@ -8,7 +8,5 @@ HYBRIXD="`cd \"$SCRIPTDIR/../../..\" && pwd`"
 DETERMINISTIC="$HYBRIXD/deterministic"
 MODULE="$DETERMINISTIC/modules/ark"
 
-# Remove a bug from ark-js library
-sed -i -e 's/ typeforce(types.tuple(types.BigInt, types.BigInt), arguments)/\/\/ REMOVED BY IOC:typeforce(types.tuple(types.BigInt, types.BigInt), arguments)/g' "$MODULE/ark-js-mod/lib/ecsignature.js"
-
+cp "$MODULE/sleep.js" "$MODULE/node_modules/@arkecosystem/utils/dist/sleep.js"
 cd "$WHEREAMI"

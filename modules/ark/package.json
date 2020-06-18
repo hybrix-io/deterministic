@@ -9,7 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@arkecosystem/crypto": "^2.6.38",
     "base-58": "0.0.1",
+    "big-integer": "^1.6.48",
     "bigi": "^1.4.2",
     "bip66": "^1.1.5",
     "bitcoin-ops": "^1.4.1",
@@ -17,6 +19,7 @@
     "bs58check": "^2.1.2",
     "buffer-reverse": "^1.0.1",
     "bytebuffer": "^5.0.1",
+    "core-js": "^3.6.5",
     "ecurve": "^1.0.6",
     "merkle-lib": "^2.0.10",
     "pushdata-bitcoin": "^1.0.1",
