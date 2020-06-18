@@ -73,11 +73,11 @@ hybrixd:
   - PROJECT_REF_PATH=hybrix/hybrixd/node
   - PROJECT_REF_NAME=hybrixd
   - PROJECT_REF_BRANCH=master
-  - "RESPONSE=$(curl --header \"Private-Token: $PRIVATE_TOKEN\" --silent \"https://gitlab.com/api/v4/projects/${PROJECT_REF_SLUG}/jobs?scope=success\")"
+  - "RESPONSE=$(curl --header \"JOB-TOKEN: $CI_JOB_TOKEN\" --silent \"https://gitlab.com/api/v4/projects/${PROJECT_REF_SLUG}/jobs?scope=success\")"
   - "echo \"${RESPONSE}\" | jq -r 'first(.[] | select(.name == \"hybrixd\" and .ref == \"master\")) | .id'"
   - "BUILD_JOB_ID=$(echo \"${RESPONSE}\" | jq -r 'first(.[] | select(.name == \"hybrixd\" and .ref == \"master\")) | .id')"
   - "echo \"Downloading the artifact from: https://gitlab.com/${PROJECT_REF_PATH}/-/jobs/${BUILD_JOB_ID}/artifacts/download\""
-  - "curl --location --header \"Private-Token: $PRIVATE_TOKEN\" \"https://gitlab.com/api/v4/projects/${PROJECT_REF_SLUG}/jobs/${BUILD_JOB_ID}/artifacts\" -o artifacts-${PROJECT_REF_NAME}.zip"
+  - "curl --location --header \"JOB-TOKEN: $CI_JOB_TOKEN\" \"https://gitlab.com/api/v4/projects/${PROJECT_REF_SLUG}/jobs/${BUILD_JOB_ID}/artifacts\" -o artifacts-${PROJECT_REF_NAME}.zip"
 
   - unzip -o artifacts-hybrixd.zip -d ./
 
@@ -89,9 +89,9 @@ hybrixd:
   - PROJECT_REF_PATH=hybrix/hybrixd/client/modules/deterministic
   - PROJECT_REF_NAME=deterministic
   - PROJECT_REF_BRANCH=master
-  - "RESPONSE=$(curl --header \"Private-Token: $PRIVATE_TOKEN\" --silent \"https://gitlab.com/api/v4/projects/${PROJECT_REF_SLUG}/jobs?scope=success\")"
+  - "RESPONSE=$(curl --header \"JOB-TOKEN: $CI_JOB_TOKEN\" --silent \"https://gitlab.com/api/v4/projects/${PROJECT_REF_SLUG}/jobs?scope=success\")"
   - "BUILD_JOB_ID=$(echo \"${RESPONSE}\" | jq -r 'first(.[] | select(.name == \"deterministic\")) | .id')"
-  - "curl --location --header \"Private-Token: $PRIVATE_TOKEN\" \"https://gitlab.com/api/v4/projects/${PROJECT_REF_SLUG}/jobs/${BUILD_JOB_ID}/artifacts\" -o artifacts-${PROJECT_REF_NAME}.zip"
+  - "curl --location --header \"JOB-TOKEN: $CI_JOB_TOKEN\" \"https://gitlab.com/api/v4/projects/${PROJECT_REF_SLUG}/jobs/${BUILD_JOB_ID}/artifacts\" -o artifacts-${PROJECT_REF_NAME}.zip"
 
   # unzip the downloaded artifact to the directory
   - unzip -o artifacts-deterministic.zip -d artifacts-deterministic/
