@@ -55,6 +55,11 @@ if (fs.existsSync(recipePath + 'asset.' + ops.symbol + '.json')) {
 const amount = ops.amount || DEFAULT_AMOUNT; // Note amount in atomics
 let unspent;
 
+function fromAtomic(x,factor){
+  const decX = new Decimal(x);
+  return decX.div(new Decimal(10).pow(factor)).toFixed();
+}
+
 if (typeof ops.unspent === 'string') {
   unspent = ops.unspent;
 } else if (typeof ops.unspent !== 'undefined') {
@@ -166,11 +171,11 @@ let toIntLocal = function (input, factor) {
 function createTransaction (data, dataCallback, errorCallback) {
 
   if(typeof data.balance === 'undefined'){
-    console.log(' [!] Balance           : undefined [Failed to retrieve balance]');
+    console.log(' [!] Balance            : undefined [Failed to retrieve balance]');
   }else if(new Decimal(data.balance).times(new Decimal(10).pow(data.result.details.factor)).lt(new Decimal(amount))){
-    console.log(' [!] Balance           : ' + data.balance + ' ' + data.result.details.symbol.toUpperCase()+ ' [Insufficient]');
+    console.log(' [!] Balance            : ' + data.balance + ' ' + data.result.details.symbol.toUpperCase()+ ' [Insufficient]');
   }else{
-    console.log(' [.] Balance           : ' + data.balance + ' ' + data.result.details.symbol.toUpperCase());
+    console.log(' [.] Balance            : ' + data.balance + ' ' + data.result.details.symbol.toUpperCase());
   }
 
   let actualUnspent;
@@ -273,9 +278,18 @@ hybrix.sequential(
     }, 'call',
 
     result => {
+      const feeAmount = typeof fee === 'undefined' ? result.details.fee : fee;
+      const nonAtomicAmount = fromAtomic(amount,result.details.factor);
+
+
+      const unspentAmount = result.details['fee-symbol'] === result.details.symbol
+            ? new Decimal(nonAtomicAmount).add(new Decimal(feeAmount)).toFixed()
+            : nonAtomicAmount
+
+      console.log(' [i] Unspent amount     : '+unspentAmount+' ' + result.details.symbol.toUpperCase());
       return {
         unspent: {
-          data: {query: '/asset/' + ops.symbol + '/unspent/' + result.address + '/' + (Number(amount) + Number(typeof fee === 'undefined' ? result.details.fee : fee)) + '/' + result.address + '/' + result.publicKey},
+          data: {query: '/asset/' + ops.symbol + '/unspent/' + result.address + '/' + unspentAmount + '/' + result.address + '/' + result.publicKey},
           step: 'rout'
         },
          balance: {
