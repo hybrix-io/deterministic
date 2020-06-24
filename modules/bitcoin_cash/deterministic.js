@@ -7,91 +7,80 @@ function mkPrivateKey (seed) {
   const seedBuffer = Buffer.from(seed, 'utf8');
   const hash = nacl.to_hex(nacl.crypto_hash_sha256(seedBuffer));
   const bn = lib.crypto.BN.fromBuffer(hash);
-
   return new lib.PrivateKey(bn);
 }
 
-function mkAddress (pk) {
-  const address = pk.toAddress();
+function mkAddress (privateKey) {
+  const address = privateKey.toAddress();
   const type = address.type === lib.Address.PayToPublicKeyHash ? 'P2PKH' : 'P2SH';
   const hash = new Uint8Array(address.hashBuffer);
-
   return cashaddrjs.encode('bitcoincash', type, hash);
 }
 
-let wrapper = (
-  function () {
+const wrapper = {
+  // create deterministic public and private keys based on a seed
+  keys: data => {
+    const privateKey = mkPrivateKey(data.seed);
     return {
-      importPrivate: data => {
-        return {privateKey: data.privateKey};
-      },
+      privateKey
+    };
+  },
 
-      // create deterministic public and private keys based on a seed
-      keys: data => {
-        const pk = mkPrivateKey(data.seed);
-        return {
-          privateKey: pk
-        };
-      },
+  importPrivate: data => {
+    return {privateKey: data.privateKey};
+  },
 
-      // generate a unique wallet address from a given public key
-      address: data => {
-        return mkAddress(data.privateKey);
-      },
+  // generate a unique wallet address from a given public key
+  address: data => mkAddress(data.privateKey),
 
-      // return public key
-      publickey: data => {
-        return mkAddress(data.privateKey);
-      },
+  // return public key
+  publickey: data => mkAddress(data.privateKey),
 
-      // return private key
-      privatekey: data => {
-        return data.privateKey;
-      },
+  // return private key
+  privatekey: data => data.privateKey,
 
-      transaction: (data, cb, err) => {
-        const targetAddr = data.target;
-        const toAddress = bchaddr.isLegacyAddress(targetAddr) ? bchaddr.toCashAddress(targetAddr) : targetAddr;
+  transaction: data => {
+    const toAddress = bchaddr.isLegacyAddress(data.target) ? bchaddr.toCashAddress(data.target) : data.target;
+    const fromAddress = bchaddr.isLegacyAddress(data.source) ? bchaddr.toCashAddress(data.source) : data.source;
 
-        const hasValidMessage = data.msg !== undefined &&
-              data.msg !== null &&
-              data !== '';
-        const amount = Number(data.amount);
-        const factor = Math.pow(10, Number(data.factor));
-        const fee = new Decimal(data.fee)
-          .times(
-            new Decimal(String(factor))
-          )
+    const hasValidMessage = data.msg !== undefined &&
+          data.msg !== null &&
+          data !== '';
+
+    const amount = Number(data.amount);
+
+    const fee = new Decimal(data.fee)
           .toNumber();
-        const utxos = data.unspent.unspents.map(mkUtxo(data.source, data.factor), data);
-        const transaction = new lib.Transaction()
+
+    const utxos = data.unspent.unspents.map(transformUtxo(data.source));
+    const transaction = new lib.Transaction()
           .from(utxos)
-          .to(toAddress, amount)
-          .change(data.source);
-        const transactionWithMsgOrDefault = hasValidMessage
+          .change(fromAddress)
+          .fee(fee)
+          .to(toAddress, amount);
+
+    const transactionWithMsgOrDefault = hasValidMessage
           ? transaction.addData(data.msg)
           : transaction;
 
-        const signedTransaction = transactionWithMsgOrDefault
-          .fee(fee)
+    const signedTransaction = transactionWithMsgOrDefault
           .sign(data.keys.privateKey)
           .serialize();
 
-        cb(signedTransaction);
-      }
-    };
+    return signedTransaction;
   }
-)();
+};
 
-function mkUtxo (addr, factor) {
-  return function (u) {
+
+function transformUtxo (address) {
+  return unspent => {
     return {
-      address: addr,
-      outputIndex: u.txn,
-      satoshis: new Decimal(u.amount)
+      address,
+      outputIndex: unspent.txn,
+      satoshis: new Decimal(unspent.amount)
         .toNumber(),
-      script: u.script,
-      txId: u.txid
+      script: unspent.script,
+      txId: unspent.txid
     };
   };
 }
