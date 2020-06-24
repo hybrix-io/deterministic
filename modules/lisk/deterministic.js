@@ -65,6 +65,8 @@ let wrapper = (
 
         if (data.mode === 'rise') tx.senderId = data.source;
 
+        if (data.mode === 'shift') tx = { recipientId: data.target, amount: Number(data.amount), secret: null };
+
         return JSON.stringify(tx);
       }
     };
