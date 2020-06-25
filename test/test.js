@@ -254,6 +254,22 @@ function outputAndCheckHash (signedTrxDataAndHash) {
   }
 }
 
+function getFeeForUnspents (nonAtomicAmount, feeAmount, details) {
+  if (typeof feeAmount === 'string' || typeof feeAmount === 'number') {
+    return details['fee-symbol'] === details.symbol
+      ?new Decimal(nonAtomicAmount).add(new Decimal(feeAmount)).toFixed()
+      :nonAtomicAmount;
+
+  } else if (typeof feeAmount === 'object' && feeAmount !== null) {
+    return feeAmount.hasOwnProperty(details.symbol)
+      ? new Decimal(nonAtomicAmount).add(new Decimal(feeAmount[details.symbol])).toFixed()
+      : nonAtomicAmount;
+  } else {
+    return NaN;
+  }
+}
+
+
 hybrix.sequential(
   [
     'init',
@@ -280,13 +296,10 @@ hybrix.sequential(
     result => {
       const feeAmount = typeof fee === 'undefined' ? result.details.fee : fee;
       const nonAtomicAmount = fromAtomic(amount,result.details.factor);
+      const unspentAmount = getFeeForUnspents (nonAtomicAmount, feeAmount, result.details)
 
-
-      const unspentAmount = result.details['fee-symbol'] === result.details.symbol
-            ? new Decimal(nonAtomicAmount).add(new Decimal(feeAmount)).toFixed()
-            : nonAtomicAmount
-
-      console.log(' [i] Unspent amount     : '+unspentAmount+' ' + result.details.symbol.toUpperCase());
+      console.log(' [.] Amount             : '+nonAtomicAmount+' ' + result.details.symbol.toUpperCase());
+      console.log(' [.] Unspent amount     : '+unspentAmount+' ' + result.details.symbol.toUpperCase());
       return {
         unspent: {
           data: {query: '/asset/' + ops.symbol + '/unspent/' + result.address + '/' + unspentAmount + '/' + result.address + '/' + result.publicKey},
