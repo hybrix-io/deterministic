@@ -56,7 +56,7 @@ const wrapper = {
     const transaction = new lib.Transaction()
           .from(utxos)
           .change(fromAddress)
-          .fee(fee)
+          .fee(Number(fee))
           .to(toAddress, amount);
 
     const transactionWithMsgOrDefault = hasValidMessage
@@ -77,8 +77,8 @@ function transformUtxo (address) {
     return {
       address,
       outputIndex: unspent.txn,
-      satoshis: new Decimal(unspent.amount)
-        .toNumber(),
+      satoshis: (new Decimal(unspent.amount)
+        .toNumber()) / (10 ** 8),
       script: unspent.script,
       txId: unspent.txid
     };
