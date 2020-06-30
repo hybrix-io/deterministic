@@ -23,7 +23,6 @@ function setNetwork (data) {
   ) {
     network = 'bitcoin';
   } else {
-    console.log('data.mode',data.mode)
     network = data.mode;
   }
   return network;
