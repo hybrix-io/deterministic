@@ -11,7 +11,7 @@ ls -la
 
 echo "[.] Retrieve node artifact"
 
-curl -s --location --header "JOB-TOKEN:$CI_JOB_TOKEN" "https://gitlab.com/api/v4/projects/hybrix%2Fhybrixd%2Fnode/jobs/artifacts/master/download?job=hybrixd" -o artifacts-hybrixd.zip
+curl -s --location --header "PRIVATE-TOKEN:$HYBRIX_BOT_GITLAB_PIPELINE_TOKEN" "https://gitlab.com/api/v4/projects/hybrix%2Fhybrixd%2Fnode/jobs/artifacts/master/download?job=hybrixd" -o artifacts-hybrixd.zip
 
 unzip -o artifacts-hybrixd.zip -d ./
 

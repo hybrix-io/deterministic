@@ -71,7 +71,7 @@ const wrapper = {
       asset: {},
       senderPublicKey: data.keys.publicKey
     };
-    if(data.message)  transaction = transaction.vendorField= data.message;
+    if(data.message)  transaction = transaction.vendorField = data.message;
 
     transaction.signature = ark.Transactions.Signer.sign(transaction, data.keys);
     transaction.id = ark.Transactions.Utils.getId(transaction);
