@@ -82,45 +82,32 @@ const deterministic = {
   transaction: function (data, dataCallback, errorCallback) {
     const hasValidMessage = typeof data.message !== 'undefined' && data.message !== null && data.message !== '';
 
-    const fee = new Decimal(data.fee);
+    const atomicFee = new Decimal(data.fee);
     if (!data.hasOwnProperty('unspent')) {
       errorCallback('Missing unspent (pre-transactional) data');
       return;
     }
 
-    const gasBaseFee = new Decimal(data.unspent.gasBaseFee);
-    const gasLimit = new Decimal(data.unspent.gasLimit);
-    const gasDataFee = new Decimal(data.unspent.gasDataFee);
-    const gasContractAvgFee =  new Decimal(data.unspent.gasContractAvgFee || 105000);
     /*
 
-     The calculation done in the recipe:
+      The calculation done in the recipe:
 
-     local::fee = gasPrice*gasBaseFee
-     fee = local::fee + gasPrice * gasEstimation
-         = gasPrice * gasBaseFee + gasPrice * gasEstimation
-         = gasPrice * (gasBaseFee + gasEstimation)
-     => fee = gasPrice * (gasBaseFee + gasEstimation)
+      fee = gasPrice * gasUsage
 
-     The reverse calculation to retrieve the gasPrice:
-     => gasPrice = fee / (gasBaseFee+gasEstimation) TODO pass gasEstimation
-
-     TOKEN:
-
-     fee = eth::local::fee/gasBaseFee * ($gasBaseFee+$gasContractAvgFee)
-         = gasPrice * (gasBaseFee+gasContractAvgFee)
-     => gasPrice = fee / (gasBaseFee+gasContractAvgFee)
+      => gasPrice = fee / gasUsage
 
     */
 
-    const gasPrice = data.mode !== 'token'
-          ? fee.dividedBy(gasBaseFee) // TODO pass gasEstimation
-          : fee.dividedBy(gasBaseFee.plus(gasContractAvgFee))
+    const gasUsage = new Decimal(data.unspent.gasUsage);
+    const atomicGasPrice =  atomicFee.div(gasUsage);
+    //DEBUG    console.log('atomicGasPrice By dividing atomicFee through gasUsage', atomicGasPrice.toString())
+    //DEBUG    console.log('Gasprice passed throug unspents', data.unspent.gasPrice)
+
 
     const txParams = {
       nonce: toHex(data.unspent.nonce),
-      gasPrice: toHex(gasPrice.toFixed(0).toString()),
-      gasLimit: toHex(gasLimit.toFixed(0).toString())
+      gasPrice: toHex(atomicGasPrice.toFixed(0).toString()),
+      gasLimit: toHex(gasUsage.toFixed(0).toString())
     };
 
     if (data.mode !== 'token') { // Base ETH mode
