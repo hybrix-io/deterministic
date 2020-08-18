@@ -22,6 +22,7 @@
     "pushdata-bitcoin": "^1.0.1",
     "typeforce": "^1.18.0",
     "varuint-bitcoin": "^1.1.0",
-    "wif": "^2.0.6"
+    "wif": "^2.0.6",
+    "left-pad": "*"
   }
 }
