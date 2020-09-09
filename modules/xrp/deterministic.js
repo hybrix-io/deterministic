@@ -27,9 +27,12 @@ const wrapper = {
     const seed = Buffer.from(data.seed, 'utf8');
     const hash = nacl.to_hex(nacl.crypto_hash_sha256(seed));
     const secret = Buffer.from(hash.substr(0, 32), 'hex');
+
     // It can encode a Buffer
     const encoded = api2.encodeSeed(secret);
-    return rippleKeyPairs.deriveKeypair(encoded);
+    const keyPair =rippleKeyPairs.deriveKeypair(encoded)
+    keyPair.secret =  encoded
+    return keyPair;
   },
 
   importPublic: function (data) {
@@ -50,7 +53,7 @@ const wrapper = {
   publickey: data => data.publicKey,
 
   // return private key
-  privatekey: data => data.privateKey,
+  privatekey: data => data.secret,
 
   // generate a transaction
   transaction: (data, callback) => {
@@ -59,6 +62,14 @@ const wrapper = {
     const hasValidMessage = data.message !== undefined && data.message !== null && data.message !== '';
     const memos = hasValidMessage ? [{data: data.message}] : [];
     const fee = atomicToRegular(data.fee, data.factor);
+
+    let tag, target;
+    if(data.target.startsWith('r') && data.target.includes('-')){ // use destination tag
+      [target,tag] = data.target.split('-');
+    }else{
+      target = data.target;
+    }
+
     const payment = {
       source: {
         address: address,
@@ -68,7 +79,8 @@ const wrapper = {
         }
       },
       destination: {
-        address: data.target,
+        address: target,
+        tag: Number(tag),
         amount: {
           value: data.amount,
           currency
