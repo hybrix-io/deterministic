@@ -66,13 +66,12 @@ const wrapper = {
     let tag, target;
     if(data.target.startsWith('r') && data.target.includes('-')){ // use destination tag
       [target,tag] = data.target.split('-');
-    }else{
-      target = data.target;
-    }
+      tag = Number(tag);
+    } else target = data.target;
 
     const payment = {
       source: {
-        address: address,
+        address,
         maxAmount: {
           value: data.amount,
           currency
@@ -80,7 +79,7 @@ const wrapper = {
       },
       destination: {
         address: target,
-        tag: Number(tag),
+        tag,
         amount: {
           value: data.amount,
           currency
