@@ -11,13 +11,12 @@ const wrapperlib = {
 };
 
 /*
- 21000 gas is charged for any transaction as a "base fee". This covers the cost of an elliptic curve operation to recover the sender address from the signature as well as the disk and bandwidth space of storing the transactio
+ * 21000 gas is charged for any transaction as a "base fee". This covers the cost of an elliptic curve operation to recover the sender address from the signature as well as the disk and bandwidth space of storing the transaction.
+ * Lower gas price means a slower transaction, but higher chance the tx doesn't burn thru its gas limit when the Eth network mempool is busy.
+ */
 
-Lower gas price means a slower transaction, but higher chance the tx doesn't burn thru its gas limit when the Eth network mempool is busy.
-
-*/
 // shim for randomBytes to avoid require('crypto') incompatibilities
-// solves bug: "There was an error collecting entropy from the browser
+// solves bug: "There was an error collecting entropy from the browser"
 const randomBytes = crypto.randomBytes;
 if (typeof window === 'object') {
   const wCrypto = window.crypto || {};
@@ -31,12 +30,13 @@ if (typeof window === 'object') {
   }
 }
 
-// encode ABI smart contract calls
-// call it by explicitly specifying the variables you want to pass along
-//
-// EXAMPLES:
-//            encode({ 'func':'balanceOf(address):(uint256)', 'vars':['target'], 'target':data.target });
-//            encode({ 'func':'transfer(address,uint256):(uint256)', 'vars':['target','amount'], 'target':data.target,'amount':toHex(data.amount) });
+/* encode ABI smart contract calls
+ * call it by explicitly specifying the variables you want to pass along
+ *
+ * examples:
+ *            encode({ 'func':'balanceOf(address):(uint256)', 'vars':['target'], 'target':data.target });
+ *            encode({ 'func':'transfer(address,uint256):(uint256)', 'vars':['target','amount'], 'target':data.target,'amount':toHex(data.amount) });
+ */
 function encode (data) {
   return '0x' + (new Function('wrapperlib', 'data', 'return wrapperlib.ethABI.simpleEncode(data.func,data.' + data.vars.join(',data.') + ');'))(wrapperlib, data).toString('hex');
 }
@@ -54,8 +54,6 @@ const deterministic = {
     const privateKey = wrapperlib.ethUtil.sha256(data.seed);
     return {privateKey: privateKey};
   },
-  // TODO importPublic
-  // TODO sumKeys
 
   importPrivate: function (data) {
     return {privateKey: Buffer.from(data.privateKey, 'hex')};
@@ -84,25 +82,20 @@ const deterministic = {
 
     const atomicFee = new Decimal(data.fee);
     if (!data.hasOwnProperty('unspent')) {
-      errorCallback('Missing unspent (pre-transactional) data');
+      errorCallback('Missing unspent (pre-transactional) data!');
       return;
     }
 
     /*
-
-      The calculation done in the recipe:
-
-      fee = gasPrice * gasUsage
-
-      => gasPrice = fee / gasUsage
-
-    */
+     * The calculation done in the recipe:
+     * fee = gasPrice * gasUsage
+     * => gasPrice = fee / gasUsage
+     */
 
     const gasUsage = new Decimal(data.unspent.gasUsage);
     const atomicGasPrice =  atomicFee.div(gasUsage);
-    //DEBUG    console.log('atomicGasPrice By dividing atomicFee through gasUsage', atomicGasPrice.toString())
-    //DEBUG    console.log('Gasprice passed throug unspents', data.unspent.gasPrice)
-
+    // DEBUG  console.log('atomicGasPrice By dividing atomicFee through gasUsage', atomicGasPrice.toString())
+    // DEBUG  console.log('Gasprice passed throug unspents', data.unspent.gasPrice)
 
     const txParams = {
       nonce: toHex(data.unspent.nonce),
@@ -110,23 +103,36 @@ const deterministic = {
       gasLimit: toHex(gasUsage.toFixed(0).toString())
     };
 
-    if (data.mode !== 'token') { // Base ETH mode
+    if (data.mode === 'native') { // Base ETH mode
       txParams.to = data.target; // send it to ...
       txParams.value = toHex(data.amount); // the amount to send
       if (hasValidMessage) { // optionally add a message to the transaction
         txParams.data = data.message;
       }
     } else { // ERC20-compatible token mode
-      const encoded = encode({ 'func': 'transfer(address,uint256):(bool)', 'vars': ['target', 'amount'], 'target': data.target, 'amount': toHex(data.amount) }); // returns the encoded binary data to be sent
-      // TODO: optionally add a message to the transaction
-      if (hasValidMessage) {
-        errorCallback('Cannot send attachment data with ERC20 tokens yet!');
-        return;
+      let ABIobject = false;
+      switch (data.mode) {
+        case 'trc21': // TRC21 (flow through)
+        default:      // token / ERC20 / TRC20
+          ABIobject = { 'func':'transfer(address,uint256):(bool)','vars':['target','amount'],'target':data.target,'amount':toHex(data.amount) };
+        break;
       }
-      txParams.to = data.contract; // send payload to contract address
-      txParams.value = '0x0'; // set to zero, since we're only sending tokens
-      txParams.data = encoded; // payload as encoded using the smart contract
+      const encoded = encode(ABIobject);  // returns the encoded contract data to be sent
+      txParams.to = data.contract;        // send payload to contract address
+      txParams.value = '0x0';             // set to zero, since we're only sending a contract/tokens
+      // concatenate a message to the transaction - at the end a byte is added containing the length of the message
+      if (hasValidMessage) {
+        if (data.message.length<=256) {
+          txParams.data = encoded+String.fromCharCode(255,255,(data.message.length-1))+data.message; // separate message data using CharCode nbsp x2, plus message length byte
+        } else {
+          errorCallback('Attachment message too long!');
+          return;
+        }
+      } else {
+        txParams.data = encoded;           // payload as encoded using the smart contract ABI
+      }
     }
+
     // Transaction is created
     const tx = new wrapperlib.EthTx(txParams);
 
@@ -135,8 +141,11 @@ const deterministic = {
     const serializedTx = tx.serialize();
     const rawTx = '0x' + serializedTx.toString('hex');
     dataCallback(rawTx);
+
   },
-  encode: function (data) { return encode(data); } // used to compute token balances by ethereum/module.js
+
+  encode: function (data) { return encode(data); }  // used to compute token balances by ethereum/module.js
+
 };
 
 // export functionality to a pre-prepared var
