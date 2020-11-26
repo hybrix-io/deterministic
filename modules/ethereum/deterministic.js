@@ -103,10 +103,12 @@ const deterministic = {
       gasLimit: toHex(gasUsage.toFixed(0).toString())
     };
 
-    if (data.mode === 'native') { // Base ETH mode
+    if (data.mode === 'main') { // Base ETH mode
       txParams.to = data.target; // send it to ...
       txParams.value = toHex(data.amount); // the amount to send
       if (hasValidMessage) { // optionally add a message to the transaction
+        // NOTE: without a message block explorers show '0x' in the message field, however, these are not bytes
+        //       added to the transaction by this library! Do not be fooled by this.
         txParams.data = data.message;
       }
     } else { // ERC20-compatible token mode
