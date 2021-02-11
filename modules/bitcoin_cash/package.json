@@ -10,8 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "bchaddrjs": "^0.3.2",
-    "bitcore-lib-cash": "^8.20.4",
+    "bitcore-lib-cash": "^8.24.2",
     "cashaddrjs": "^0.3.12",
-    "decimal.js-light": "^2.5.0"
+    "decimal.js-light": "^2.5.1"
   }
 }

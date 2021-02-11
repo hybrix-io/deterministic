@@ -40,17 +40,17 @@ var proposalTypeMapping = {
   0x05: 'FeeChange',
   0x06: 'CreateValidator',
   0x07: 'RemoveValidator'
-  /**
-   * VoteOption
-   * @example
-   * OptionEmpty - 0x00
-   * OptionYes - 0x01
-   * OptionAbstain - 0x02
-   * OptionNo - 0x03
-   * OptionNoWithVeto - 0x04
-   */
-
 };
+/**
+ * VoteOption
+ * @example
+ * OptionEmpty - 0x00
+ * OptionYes - 0x01
+ * OptionAbstain - 0x02
+ * OptionNo - 0x03
+ * OptionNoWithVeto - 0x04
+ */
+
 var voteOption = {
   OptionEmpty: 0x00,
   OptionYes: 0x01,

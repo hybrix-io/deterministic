@@ -5,8 +5,8 @@
   "dependencies": {
     "create-hash": "*",
     "net": "^1.0.2",
-    "ripple-keypairs": "^1.0.1",
-    "ripple-lib": "^1.8.0",
+    "ripple-keypairs": "^1.0.2",
+    "ripple-lib": "^1.9.0",
     "tls": "0.0.1",
     "x-address-codec": "*"
   },
