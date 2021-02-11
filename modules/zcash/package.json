@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "acorn": "^6.1.1",
+    "acorn": "^6.4.2",
     "bitcore-lib-zcash": "^0.13.20",
     "bs58check": "^2.1.2"
   }

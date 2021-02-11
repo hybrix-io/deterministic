@@ -6,9 +6,9 @@ const bitcore = require('bitcore-lib-zcash');
 const livenet = bitcore.Networks.livenet;
 
 // Replace missing lodash _.sumBy
-window.sumBy =  function(array, f){
-  let result =0;
-  for(let item of array){
+window.sumBy = function (array, f) {
+  let result = 0;
+  for (let item of array) {
     result += f(item);
   }
   return result;
@@ -40,7 +40,7 @@ const wrapper = {
   publickey: data => data.pubKey.toString(),
 
   // return private key
-  privatekey:  data => data.privKey.toString(),
+  privatekey: data => data.privKey.toString(),
 
   transaction: function (data) {
     const fee = parseFloat(data.fee); // Removed * 100000000;
@@ -49,10 +49,10 @@ const wrapper = {
     const inputs = data.unspent.unspents.map(transformUnspent(data.source));
 
     const tx = new bitcore.Transaction()
-          .from(inputs)
-          .to(data.target, parseInt(data.amount))
-          .change(data.source)
-          .fee(fee);
+      .from(inputs)
+      .to(data.target, parseInt(data.amount))
+      .change(data.source)
+      .fee(fee);
 
     if (memos) {
       tx.addData(memos);
@@ -64,7 +64,10 @@ const wrapper = {
   }
 };
 
-function transformUnspent(address) {
+/**
+ * @param address
+ */
+function transformUnspent (address) {
   return utxo => {
     return {
       txId: utxo.txid,
@@ -72,10 +75,9 @@ function transformUnspent(address) {
       address,
       script: utxo.script,
       satoshis: parseInt(utxo.amount)
-    }
+    };
   };
 }
-
 
 // export the functionality to a pre-prepared var
 window.deterministic = wrapper;

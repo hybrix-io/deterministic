@@ -8,7 +8,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "hawk": "*",
+    "hawk": "^9.0.0",
     "stringstream": "*"
   },
   "devDependencies": {},

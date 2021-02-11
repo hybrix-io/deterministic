@@ -13,16 +13,16 @@
     "bigi": "^1.4.2",
     "bip66": "^1.1.5",
     "bitcoin-ops": "^1.4.1",
-    "bitcoinjs-lib": "^5.1.7",
+    "bitcoinjs-lib": "^5.2.0",
     "bs58check": "^2.1.2",
     "buffer-reverse": "^1.0.1",
     "ecurve": "^1.0.6",
+    "left-pad": "*",
     "long": "^4.0.0",
     "merkle-lib": "^2.0.10",
     "pushdata-bitcoin": "^1.0.1",
     "typeforce": "^1.18.0",
-    "varuint-bitcoin": "^1.1.0",
-    "wif": "^2.0.6",
-    "left-pad": "*"
+    "varuint-bitcoin": "^1.1.2",
+    "wif": "^2.0.6"
   }
 }

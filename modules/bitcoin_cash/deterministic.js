@@ -10,11 +10,11 @@ function mkPrivateKey (seed) {
   return new lib.PrivateKey(bn);
 }
 
-function mkAddress (privateKey) {
+function mkAddress (privateKey,mode) {
   const address = privateKey.toAddress();
   const type = address.type === lib.Address.PayToPublicKeyHash ? 'P2PKH' : 'P2SH';
   const hash = new Uint8Array(address.hashBuffer);
-  return cashaddrjs.encode('bitcoincash', type, hash);
+  return cashaddrjs.encode(mode || 'bitcoincash', type, hash); //  ['bitcoincash', 'bchtest', 'bchreg'];
 }
 
 const wrapper = {
@@ -31,10 +31,10 @@ const wrapper = {
   },
 
   // generate a unique wallet address from a given public key
-  address: data => mkAddress(data.privateKey),
+  address: data => mkAddress(data.privateKey, data.mode),
 
   // return public key
-  publickey: data => mkAddress(data.privateKey),
+  publickey: data => mkAddress(data.privateKey,data.mode),
 
   // return private key
   privatekey: data => data.privateKey,

@@ -37,14 +37,20 @@ if (typeof window === 'object') {
  *            encode({ 'func':'balanceOf(address):(uint256)', 'vars':['target'], 'target':data.target });
  *            encode({ 'func':'transfer(address,uint256):(uint256)', 'vars':['target','amount'], 'target':data.target,'amount':toHex(data.amount) });
  */
+/**
+ * @param data
+ */
 function encode (data) {
   return '0x' + (new Function('wrapperlib', 'data', 'return wrapperlib.ethABI.simpleEncode(data.func,data.' + data.vars.join(',data.') + ');'))(wrapperlib, data).toString('hex');
 }
 
 // Expects string input and parses it to hexadecimal format
+/**
+ * @param input
+ */
 function toHex (input) {
-  let result = new Decimal(input).toHex().toString('hex');
-  return result ? result : '0x0';
+  const result = new Decimal(input).toHex().toString('hex');
+  return result || '0x0';
 }
 
 const deterministic = {
@@ -93,7 +99,7 @@ const deterministic = {
      */
 
     const gasUsage = new Decimal(data.unspent.gasUsage);
-    const atomicGasPrice =  atomicFee.div(gasUsage);
+    const atomicGasPrice = atomicFee.div(gasUsage);
     // DEBUG  console.log('atomicGasPrice By dividing atomicFee through gasUsage', atomicGasPrice.toString())
     // DEBUG  console.log('Gasprice passed throug unspents', data.unspent.gasPrice)
 
@@ -115,23 +121,23 @@ const deterministic = {
       let ABIobject = false;
       switch (data.mode) {
         case 'trc21': // TRC21 (flow through)
-        default:      // token / ERC20 / TRC20
-          ABIobject = { 'func':'transfer(address,uint256):(bool)','vars':['target','amount'],'target':data.target,'amount':toHex(data.amount) };
-        break;
+        default: // token / ERC20 / TRC20
+          ABIobject = { 'func': 'transfer(address,uint256):(bool)', 'vars': ['target', 'amount'], 'target': data.target, 'amount': toHex(data.amount) };
+          break;
       }
-      const encoded = encode(ABIobject);  // returns the encoded contract data to be sent
-      txParams.to = data.contract;        // send payload to contract address
-      txParams.value = '0x0';             // set to zero, since we're only sending a contract/tokens
+      const encoded = encode(ABIobject); // returns the encoded contract data to be sent
+      txParams.to = data.contract; // send payload to contract address
+      txParams.value = '0x0'; // set to zero, since we're only sending a contract/tokens
       // concatenate a message to the transaction - at the end a byte is added containing the length of the message
       if (hasValidMessage) {
-        if (data.message.length<=256) {
-          txParams.data = encoded+String.fromCharCode(255,255,(data.message.length-1))+data.message; // separate message data using CharCode nbsp x2, plus message length byte
+        if (data.message.length <= 256) {
+          txParams.data = encoded + String.fromCharCode(255, 255, (data.message.length - 1)) + data.message; // separate message data using CharCode nbsp x2, plus message length byte
         } else {
           errorCallback('Attachment message too long!');
           return;
         }
       } else {
-        txParams.data = encoded;           // payload as encoded using the smart contract ABI
+        txParams.data = encoded; // payload as encoded using the smart contract ABI
       }
     }
 
@@ -143,10 +149,9 @@ const deterministic = {
     const serializedTx = tx.serialize();
     const rawTx = '0x' + serializedTx.toString('hex');
     dataCallback(rawTx);
-
   },
 
-  encode: function (data) { return encode(data); }  // used to compute token balances by ethereum/module.js
+  encode: function (data) { return encode(data); } // used to compute token balances by ethereum/module.js
 
 };
 

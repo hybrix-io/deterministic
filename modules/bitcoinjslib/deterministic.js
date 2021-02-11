@@ -5,26 +5,16 @@
 // [!] Browserify this and save to deterministic.js.lzma to enable sending it from hybrixd to the browser!
 //
 const bitcoinjslib = require('./node_modules/bitcoinjs-lib/');
-bitcoinjslib.networks = {...bitcoinjslib.networks, ...require('./coininfo/networks.js')} // inject alt coin network definitions
+bitcoinjslib.networks = {...bitcoinjslib.networks, ...require('./coininfo/networks.js')}; // inject alt coin network definitions
 
-const base58 = require('bs58');
-const ecurve = require('ecurve');
-const BigInteger = require('bigi');
-
+/**
+ * @param data
+ */
 function setNetwork (data) {
   let network = 'bitcoin';
-  if (
-    data.mode === 'bitcoincash'
-  ) {
-    return '[UNDER MAINTENANCE]';
-  } else if (
-    data.mode === 'counterparty' ||
-      data.mode === 'omni'
-  ) {
-    network = 'bitcoin';
-  } else {
-    network = data.mode;
-  }
+  if (data.mode === 'bitcoincash') return '[UNDER MAINTENANCE]';
+  else if (data.mode === 'counterparty' || data.mode === 'omni') network = 'bitcoin';
+  else network = data.mode;
   return network;
 }
 
@@ -36,14 +26,12 @@ let wrapper = {
 
   // create deterministic public and private keys based on a seed
   keys: function (data) {
-
     const network = setNetwork(data);
     const hash = bitcoinjslib.crypto.sha256(data.seed);
-    const privk = hash; //BigInteger.fromBuffer(hash);
-    const pubk = null;
+    const privk = hash; // BigInteger.fromBuffer(hash);
     let keyPair;
     if (network === 'bitcoin') {
-      keyPair =  bitcoinjslib.ECPair.fromPrivateKey(privk); // backwards compatibility for BTC
+      keyPair = bitcoinjslib.ECPair.fromPrivateKey(privk); // backwards compatibility for BTC
     } else {
       keyPair = bitcoinjslib.ECPair.fromPrivateKey(privk, {
         compressed: false,
@@ -58,8 +46,7 @@ let wrapper = {
   address: function (data) {
     const network = setNetwork(data);
     const keyPair = bitcoinjslib.ECPair.fromWIF(data.WIF, bitcoinjslib.networks[network]);
-    const publicKey = keyPair.publicKey.toString('hex');
-    const { address } = bitcoinjslib.payments.p2pkh({ pubkey: keyPair.publicKey, network: bitcoinjslib.networks[network] })
+    const { address } = bitcoinjslib.payments.p2pkh({ pubkey: keyPair.publicKey, network: bitcoinjslib.networks[network] });
     return address;
   },
 
@@ -127,8 +114,8 @@ let wrapper = {
 
       // add OP_RETURN
       for (let bytesWrote = 0; bytesWrote < encoded.length; bytesWrote += MAX_OP_RETURN) {
-        const op_return = encoded.slice(bytesWrote, bytesWrote + MAX_OP_RETURN);
-        const dataScript = bitcoinjslib.payments.embed({ data: [ op_return] });
+        const opReturn = encoded.slice(bytesWrote, bytesWrote + MAX_OP_RETURN);
+        const dataScript = bitcoinjslib.payments.embed({ data: [opReturn] });
         tx.addOutput(dataScript.output, 0); // OP_RETURN always with 0 value unless you want to burn coins
       }
 
@@ -143,10 +130,10 @@ let wrapper = {
       }
 
       let target;
-      if(data.mode === 'bitcoin' && data.target.startsWith('bc1')){
-        const targetAddress =  bitcoinjslib.address.fromBech32(data.target);
+      if (data.mode === 'bitcoin' && data.target.startsWith('bc1')) {
+        const targetAddress = bitcoinjslib.address.fromBech32(data.target);
         target = bitcoinjslib.address.toBase58Check(targetAddress.data, bitcoinjslib.networks[network].pubKeyHash);
-      }else{
+      } else {
         target = data.target;
       }
       // add spend amount output
@@ -154,14 +141,15 @@ let wrapper = {
 
       // send back change
       const outchange = parseInt(data.unspent.change); // fee is already being deducted when calculating unspents
-      if (outchange > 0) { tx.addOutput(data.source, outchange); }
+      if (outchange > 0) {
+        tx.addOutput(data.source, outchange);
+      }
     }
 
     // sign inputs
     for (let i in data.unspent.unspents) {
       tx.sign(parseInt(i), keyPair);
     }
-
     return tx.build().toHex();
   }
 };

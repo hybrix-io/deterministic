@@ -10,7 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@tronscan/client": "^0.2.68",
     "btoa": "^1.2.1",
-    "google-protobuf": "^3.7.0"
+    "google-protobuf": "^3.14.0"
   }
 }
