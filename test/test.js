@@ -12,21 +12,21 @@ const DEFAULT_AMOUNT = '1000';
 const DEFAULT_USERNAME = 'POMEW4B5XACN3ZCX';
 const DEFAULT_PASSWORD = 'TVZS7LODA5CSGP6U';
 const ops = stdio.getopt({
-  'symbol': {key: 's', args: 1, description: 'Select a symbol to run test.'},
-  'amount': {key: 'a', args: 1, description: 'Transaction amount. (Defaults to ' + DEFAULT_AMOUNT + ')'},
-  'unspent': {key: 'u', args: 1, description: 'Manually specify unspents.'},
-  'target': {key: 't', args: 1, description: ' Target address (Defaults to source address)'},
-  'fee': {key: 'f ', args: 1, description: 'Manually specify fee (Defaults to asset default fee).'},
-  'seed': {args: 1, description: 'Manually specify seed. NOTE: Never store the credentials anywhere unencrypted, run the command through an IDE and not through a command line, and have a separate test account ready with only small amounts.'},
-  'username': {args: 1, description: 'Manually specify username. (Defaults to ' + DEFAULT_USERNAME + ')'},
-  'password': {args: 1, description: 'Manually specify password.'},
-  'compiled': {args: 0, description: 'Use compiled code.'},
-  'push': {key: 'p', args: 0, description: 'Push the signed transaction to the target chain. Restrictions such as transaction cost and funding requirements may apply. Also, you might want to specify --seed for this to work.'}
+  symbol: {key: 's', args: 1, description: 'Select a symbol to run test.'},
+  amount: {key: 'a', args: 1, description: 'Transaction amount. (Defaults to ' + DEFAULT_AMOUNT + ')'},
+  unspent: {key: 'u', args: 1, description: 'Manually specify unspents.'},
+  target: {key: 't', args: 1, description: ' Target address (Defaults to source address)'},
+  fee: {key: 'f ', args: 1, description: 'Manually specify fee (Defaults to asset default fee).'},
+  seed: {args: 1, description: 'Manually specify seed. NOTE: Never store the credentials anywhere unencrypted, run the command through an IDE and not through a command line, and have a separate test account ready with only small amounts.'},
+  username: {args: 1, description: 'Manually specify username. (Defaults to ' + DEFAULT_USERNAME + ')'},
+  password: {args: 1, description: 'Manually specify password.'},
+  compiled: {args: 0, description: 'Use compiled code.'},
+  push: {key: 'p', args: 0, description: 'Push the signed transaction to the target chain. Restrictions such as transaction cost and funding requirements may apply. Also, you might want to specify --seed for this to work.'}
 });
 
 // if we were called without arguments, display a message
 if (!ops.symbol) {
-  console.log('\nThis script tests a deterministic wrapper. A Hybrixd needs to be running for it to work. \n\nUsage example:\n');
+  console.log('\nThis script tests a deterministic wrapper. hybrixd needs to be running for it to work. \n\nUsage example:\n');
   console.log('./test --symbol=dummy\n');
   console.log('For help, type:\n');
   console.log('./test --help\n');
@@ -89,13 +89,15 @@ const showKeysGetAddress = (dataCallback, errorCallback, details) => (keys, seed
   keys.seed = seed;
 
   console.log('[.] Keys               :', keys);
+  if (typeof window.deterministic.publickey !== 'function') console.error('[!] Missing publickey method.');
   const publicKey = window.deterministic.publickey(keys);
   console.log('[.] Seed               :', seed);
 
   console.log('[.] Public Key         :', publicKey);
+  if (typeof window.deterministic.privatekey !== 'function') console.error('[!] Missing privatekey method.');
   const privateKey = window.deterministic.privatekey(keys);
   console.log('[.] Private Key        :', privateKey);
-
+  if (typeof window.deterministic.address !== 'function') console.error('[!] Missing address method.');
   const address = window.deterministic.address(keys, showAddress(dataCallback, errorCallback, keys, details, publicKey), errorCallback);
   if (typeof address !== 'undefined') {
     showAddress(dataCallback, errorCallback, keys, details, publicKey)(address);
@@ -134,15 +136,18 @@ function getKeysAndAddress (details, dataCallback, errorCallback) {
     deterministic = CommonUtils.activate(code);
   } else {
     console.log('[i] No custom compile.sh found . Using uncompiled version.');
-    deterministic = require('../modules/' + baseMode + '/deterministic.js');
+    require('../modules/' + baseMode + '/deterministic.js');
+    deterministic = window.deterministic;
   }
   if (typeof deterministic !== 'object' || deterministic === null) {
-    console.log('[!] Failed to activate deterministic code.');
+    console.error('[!] Failed to activate deterministic code.');
   }
   const userKeys = CommonUtils.generateKeys(password, username, 0);
   const seed = ops.seed || CommonUtils.seedGenerator(userKeys, details['keygen-base']);
 
   console.log('[.] Seed               :', seed);
+  if (typeof deterministic.keys !== 'function') console.error('[!] Missing keys method.');
+
   const keys = deterministic.keys({seed, mode: subMode}, showKeysGetAddress(dataCallback, errorCallback, details), errorCallback);
   if (typeof keys !== 'undefined') {
     showKeysGetAddress(dataCallback, errorCallback, details)(keys, seed);
@@ -178,9 +183,9 @@ function outputResults (result) {
   }
 }
 
-let toIntLocal = function (input, factor) {
-  let f = Number(factor);
-  let x = new Decimal(String(input));
+const toIntLocal = function (input, factor) {
+  const f = Number(factor);
+  const x = new Decimal(String(input));
   return x.times('1' + (f > 1 ? '0'.repeat(f) : '')).toString();
 };
 
@@ -231,7 +236,7 @@ function createTransaction (data, dataCallback, errorCallback) {
   };
 
   console.log('[.] data passed to deterministic           : ', tx);
-
+  if (typeof window.deterministic.transaction !== 'function') console.error('[!] Missing transaction method.');
   const result = window.deterministic.transaction(tx, dataCallback, errorCallback);
   if (typeof result !== 'undefined') {
     dataCallback(result);
@@ -361,10 +366,10 @@ hybrix.sequential(
         if (data.hasOwnProperty('help')) {
           console.trace('[!] ' + data.help);
         } else {
-          console.trace('[!] ' + error);
+          console.trace('[!] ', error);
         }
       } catch (e) {
-        console.trace('[!] ' + error);
+        console.trace('[!] ', error);
       }
     }
   }

@@ -12,6 +12,7 @@
     "bchaddrjs": "^0.3.2",
     "bitcore-lib-cash": "^8.24.2",
     "cashaddrjs": "^0.3.12",
-    "decimal.js-light": "^2.5.1"
+    "decimal.js-light": "^2.5.1",
+    "slpjs": "^0.1.2"
   }
 }
