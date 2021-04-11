@@ -1,3 +1,9 @@
+// (C) 2021 hybrix / Joachim de Koning
+// hybrixd module - deterministic/bitcoin_cash
+// Deterministic encryption wrapper for Bitcoin Cash
+//
+// [!] Browserify this and save to deterministic.js.lzma to enable sending it from hybrixd to the browser!
+//
 const lib = require('bitcore-lib-cash');
 const cashaddrjs = require('cashaddrjs');
 const bchaddr = require('bchaddrjs');
@@ -34,7 +40,7 @@ function mkPrivateKey (seed) {
   const seedBuffer = Buffer.from(seed, 'utf8');
   const hash = nacl.to_hex(nacl.crypto_hash_sha256(seedBuffer));
   const bn = lib.crypto.BN.fromBuffer(hash);
-  return new lib.PrivateKey(bn);
+  return new lib.PrivateKey(bn).toWIF();
 }
 
 /**
@@ -56,7 +62,7 @@ function slpTransaction (data) {
     satoshis: genesisTxData.satoshis,
     wif
   }
-   */
+  */
   const utxos = data.unspent.unspents.map(transformSlpUtxo(data, wif));
 
   // node_modules/slpjs/lib/slp.js:34
@@ -109,12 +115,17 @@ function bchTransaction (data) {
   return signedTransaction;
 }
 
-/**
- * @param privateKey
- * @param mode
- */
-function mkAddress (privateKey, mode) {
-  const address = privateKey.toAddress();
+function mkPublicKey (WIF) {
+  // reference: https://learnmeabitcoin.com/technical/public-key
+  return lib.PublicKey( lib.PrivateKey(WIF) );
+}
+
+function mkAddress (WIF) {
+   return lib.PrivateKey(WIF).toAddress().hash;
+}
+
+function mkAddressBCH (WIF, mode) {
+  const address = lib.PrivateKey(WIF).toAddress();
   const type = address.type === lib.Address.PayToPublicKeyHash ? 'P2PKH' : 'P2SH';
   const hash = new Uint8Array(address.hashBuffer);
   if (mode === 'slp') return bchaddrSLP.toSlpAddress(cashaddrjs.encode('bitcoincash', type, hash));
@@ -123,19 +134,34 @@ function mkAddress (privateKey, mode) {
 
 const wrapper = {
   // create deterministic public and private keys based on a seed
-  keys: data => ({privateKey: mkPrivateKey(data.seed)}),
+  keys: data => {
+    const WIF = mkPrivateKey(data.seed);
+    return {
+      WIF: WIF,
+      publicKey: mkPublicKey(WIF),
+      address: mkAddress(WIF),
+      addressBCH: mkAddressBCH(WIF, data.mode),
+    };
+  },
 
-  importPrivate: data => ({privateKey: data.privateKey}),
-
-  // generate a unique wallet address from a given public key
-  address: data => mkAddress(data.privateKey, data.mode),
+  // import private key in WIF-format
+  importPrivate: data => ({
+    WIF: data.privateKey,
+    publicKey: mkPublicKey(data.privateKey),
+    address: mkAddress(data.privateKey),
+    addressBCH: mkAddressBCH(data.privateKey, data.mode),    
+  }),
+  
+  // return private key
+  privatekey: data => data.WIF,
 
   // return public key
-  publickey: data => mkAddress(data.privateKey, data.mode),
+  publickey: data => data.publicKey,
 
-  // return private key
-  privatekey: data => data.privateKey,
+  // generate a unique wallet address from a given public key
+  address: data => data.addressBCH,
 
+  // return deterministic transaction data
   transaction: data => (data.mode === 'slp') ? slpTransaction(data) : bchTransaction(data)
 };
 
