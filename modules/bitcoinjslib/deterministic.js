@@ -10,62 +10,83 @@ bitcoinjslib.networks = {...bitcoinjslib.networks, ...require('./coininfo/networ
 /**
  * @param data
  */
-function setNetwork (data) {
+function setNetwork (mode) {
   let network = 'bitcoin';
-  if (data.mode === 'bitcoincash') return '[UNDER MAINTENANCE]';
-  else if (data.mode === 'counterparty' || data.mode === 'omni') network = 'bitcoin';
-  else network = data.mode;
+  if (mode === 'counterparty' || mode === 'omni') network = 'bitcoin';
+  else network = mode;
   return network;
 }
 
-let wrapper = {
+function mkKeyPair (seed, network) {
+  const hash = bitcoinjslib.crypto.sha256(seed);
+  let keyPair;
+  if (network === 'bitcoin') {
+    keyPair = bitcoinjslib.ECPair.fromPrivateKey(hash); // backwards compatibility for BTC
+  } else {
+    keyPair = bitcoinjslib.ECPair.fromPrivateKey(hash, {
+      compressed: false,
+      network: bitcoinjslib.networks[network]
+    });
+  }
+  return keyPair;
+}
 
-  importPrivate: function (data) {
-    return {WIF: data.privateKey};
+function mkKeyPairFromWIF (WIF, network) {
+  return bitcoinjslib.ECPair.fromWIF(WIF, bitcoinjslib.networks[network]);
+}
+
+function mkPublicKey (keyPair) {
+  // reference: https://learnmeabitcoin.com/technical/public-key
+  return keyPair.publicKey.toString('hex');
+}
+
+function mkAddress (keyPair, network) {
+    const { address } = bitcoinjslib.payments.p2pkh({ pubkey: keyPair.publicKey, network: bitcoinjslib.networks[network] });
+    return address;
+}
+
+let wrapper = {
+  
+  // create deterministic public and private keys based on a seed
+  keys: data => {
+    const network = setNetwork(data.mode);
+    const keyPair = mkKeyPair(data.seed, network);
+    const WIF = keyPair.toWIF();
+    const publicKey = mkPublicKey(keyPair);
+    const address = mkAddress(keyPair, network);
+
+    return {
+      WIF:WIF,
+      publicKey:publicKey,
+      address:address
+    };
   },
 
-  // create deterministic public and private keys based on a seed
-  keys: function (data) {
-    const network = setNetwork(data);
-    const hash = bitcoinjslib.crypto.sha256(data.seed);
-    const privk = hash; // BigInteger.fromBuffer(hash);
-    let keyPair;
-    if (network === 'bitcoin') {
-      keyPair = bitcoinjslib.ECPair.fromPrivateKey(privk); // backwards compatibility for BTC
-    } else {
-      keyPair = bitcoinjslib.ECPair.fromPrivateKey(privk, {
-        compressed: false,
-        network: bitcoinjslib.networks[network]
-      });
-    }
-    const WIF = keyPair.toWIF();
-    return {WIF};
+  importPrivate: function (data) {
+    const network = setNetwork(data.mode);
+    const keyPair = mkKeyPairFromWIF(data.privateKey, network);
+    const publicKey = mkPublicKey(keyPair);
+    const address = mkAddress(keyPair, network);
+
+    return {
+      WIF:data.privateKey,
+      publicKey:publicKey,
+      address:address
+    };
   },
 
   // generate a unique wallet address from a given public key
-  address: function (data) {
-    const network = setNetwork(data);
-    const keyPair = bitcoinjslib.ECPair.fromWIF(data.WIF, bitcoinjslib.networks[network]);
-    const { address } = bitcoinjslib.payments.p2pkh({ pubkey: keyPair.publicKey, network: bitcoinjslib.networks[network] });
-    return address;
-  },
+  address: data => data.address,
 
   // return public key
-  publickey: function (data) {
-    const network = setNetwork(data);
-    const keyPair = bitcoinjslib.ECPair.fromWIF(data.WIF, bitcoinjslib.networks[network]);
-    const publicKey = keyPair.publicKey.toString('hex');
-    return publicKey;
-  },
+  publickey: data => data.publicKey,
 
   // return private key
-  privatekey: function (data) {
-    return data.WIF;
-  },
+  privatekey: data => data.WIF,
 
-  transaction: function (data) {
-    // return deterministic transaction data
-    const network = setNetwork(data);
+  // return deterministic transaction data
+  transaction: data => {
+    const network = setNetwork(data.mode);
     const keyPair = bitcoinjslib.ECPair.fromWIF(data.keys.WIF, bitcoinjslib.networks[network]);
     const tx = new bitcoinjslib.TransactionBuilder(bitcoinjslib.networks[network]);
 
