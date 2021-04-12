@@ -7,7 +7,7 @@
 const lib = require('bitcore-lib-cash');
 const cashaddrjs = require('cashaddrjs');
 const bchaddr = require('bchaddrjs');
-const Decimal = require('decimal.js-light');
+//const Decimal = require('decimal.js-light');
 
 const slpjs = require('slpjs');
 const slp = new slpjs.slp();
@@ -87,6 +87,7 @@ function slpTransaction (data) {
  * @param data
  */
 function bchTransaction (data) {
+  const privKey = lib.PrivateKey(data.keys.WIF);
   const toAddress = bchaddr.isLegacyAddress(data.target) ? bchaddr.toCashAddress(data.target) : data.target;
   const fromAddress = bchaddr.isLegacyAddress(data.source) ? bchaddr.toCashAddress(data.source) : data.source;
 
@@ -94,14 +95,14 @@ function bchTransaction (data) {
 
   const amount = Number(data.amount);
 
-  const fee = new Decimal(data.fee).toNumber();
+  const fee = Number(data.fee);
 
   const utxos = data.unspent.unspents.map(transformBchUtxo(data));
 
   const transaction = new lib.Transaction()
     .from(utxos)
     .change(fromAddress)
-    .fee(Number(fee))
+    .fee(fee)
     .to(toAddress, amount);
 
   const transactionWithMsgOrDefault = hasValidMessage
@@ -109,7 +110,7 @@ function bchTransaction (data) {
     : transaction;
 
   const signedTransaction = transactionWithMsgOrDefault
-    .sign(data.keys.privateKey)
+    .sign(privKey)
     .serialize();
 
   return signedTransaction;
@@ -117,14 +118,15 @@ function bchTransaction (data) {
 
 function mkPublicKey (WIF) {
   // reference: https://learnmeabitcoin.com/technical/public-key
-  return lib.PublicKey( lib.PrivateKey(WIF) );
+  const publicKey = lib.PublicKey( lib.PrivateKey(WIF) );
+  return publicKey.toString();
 }
 
-function mkAddress (WIF) {
-   return lib.PrivateKey(WIF).toAddress().hash;
+function mkAddressLegacy (WIF, mode) {
+  return bchaddr.toLegacyAddress( mkAddress (WIF, mode) );
 }
 
-function mkAddressBCH (WIF, mode) {
+function mkAddress (WIF, mode) {
   const address = lib.PrivateKey(WIF).toAddress();
   const type = address.type === lib.Address.PayToPublicKeyHash ? 'P2PKH' : 'P2SH';
   const hash = new Uint8Array(address.hashBuffer);
@@ -139,8 +141,8 @@ const wrapper = {
     return {
       WIF: WIF,
       publicKey: mkPublicKey(WIF),
-      address: mkAddress(WIF),
-      addressBCH: mkAddressBCH(WIF, data.mode),
+      addressLegacy: mkAddressLegacy(WIF, data.mode),
+      address: mkAddress(WIF, data.mode),
     };
   },
 
@@ -148,8 +150,8 @@ const wrapper = {
   importPrivate: data => ({
     WIF: data.privateKey,
     publicKey: mkPublicKey(data.privateKey),
-    address: mkAddress(data.privateKey),
-    addressBCH: mkAddressBCH(data.privateKey, data.mode),    
+    addressLegacy: mkAddressLegacy(data.privateKey, data.mode),
+    address: mkAddress(data.privateKey, data.mode),    
   }),
   
   // return private key
@@ -159,7 +161,7 @@ const wrapper = {
   publickey: data => data.publicKey,
 
   // generate a unique wallet address from a given public key
-  address: data => data.addressBCH,
+  address: data => data.address,
 
   // return deterministic transaction data
   transaction: data => (data.mode === 'slp') ? slpTransaction(data) : bchTransaction(data)
