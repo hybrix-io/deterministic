@@ -262,6 +262,7 @@ function optionalPushToTargetChain (signedTrxData) {
  */
 function outputAndCheckHash (signedTrxDataAndHash) {
   if (username !== 'POMEW4B5XACN3ZCX') {
+    console.log('[.] Transaction        :', signedTrxDataAndHash.signedTrxData);
     console.log('[i] Skipping hash comparison as the test user POMEW4B5XACN3ZCX is not used');
   } else {
     console.log('[.] Transaction        :', signedTrxDataAndHash.signedTrxData);
