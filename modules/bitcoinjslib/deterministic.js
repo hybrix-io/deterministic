@@ -45,7 +45,7 @@ function mkAddress (keyPair, network) {
     return address;
 }
 
-let wrapper = {
+const wrapper = {
   
   // create deterministic public and private keys based on a seed
   keys: data => {
