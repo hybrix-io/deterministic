@@ -9,18 +9,21 @@
     "assets" : [
       "func assets"
     ],
-    "code" : [
-      "mime 'file:data'",
-      "done 'modules/deterministic/$1/deterministic.js.lzma'"
+    "code/baseMode" : [
+      "mime file:data",
+      "done 'modules/deterministic/$baseMode/deterministic.js.lzma'"
     ],
-    "hash" : [
-      "func 'hash/$1'"
+    "hash/modeOrSymbol" : [
+      "func hash/$modeOrSymbol"
     ],
     "hashes" : [
-      "func 'hashes'"
+      "func hashes"
     ],
     "modes" : [
-      "func 'modes'"
+      "func modes"
+    ],
+    "reload/baseMode" : [
+      "func reload/$baseMode"
     ]
   },
   "router" : {
@@ -37,6 +40,15 @@
         "_list" : "mode",
         "_sample" : "dummycoin",
         "_this" : "Returns the DJB2 hash of the deterministic blobs (client side code) for `$MODE` ."
+      }
+    },
+    "reload" : {
+      "_access" : "root",
+      "_this" : "Reload all deterministic blobs",
+      "_ref":{
+        "_list" : "mode",
+        "_sample" : "dummycoin",
+        "_this" : "Reload the deterministic blob (client side code) for `$MODE` ."
       }
     },
     "hashes":"Returns the DJB2 hash of all deterministic blobs (client side code).",
