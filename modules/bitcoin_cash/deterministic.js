@@ -4,9 +4,14 @@
 //
 // [!] Browserify this and save to deterministic.js.lzma to enable sending it from hybrixd to the browser!
 //
-let wrapperlib = require('./wrapperlib');
-wrapperlib.slp = new wrapperlib.slpjs.slp();
-//const Decimal = require('decimal.js-light'); Decimal.set({ precision: 64 })
+
+const bitcore = require('bitcore-lib-cash');
+const cashaddrjs = require('cashaddrjs');
+const slpjs = require('slpjs');
+const bchaddr = require('bchaddrjs');
+const bchaddrSLP = require('bchaddrjs-slp');
+
+const slp = new slpjs.slp();
 
 /**
  * @param address
@@ -33,8 +38,8 @@ const transformSlpUtxo = (data, wif) => unspent => ({
 function mkPrivateKey (seed) {
   const seedBuffer = Buffer.from(seed);
   const hash = nacl.to_hex(nacl.crypto_hash_sha256(seedBuffer));
-  const bn = wrapperlib.bitcore.crypto.BN.fromBuffer(hash);
-  return new wrapperlib.bitcore.PrivateKey(bn).toWIF();
+  const bn = bitcore.crypto.BN.fromBuffer(hash);
+  return new bitcore.PrivateKey(bn).toWIF();
 }
 
 /**
@@ -60,7 +65,7 @@ function slpTransaction (data) {
   const utxos = data.unspent.unspents.map(transformSlpUtxo(data, wif));
 
   // node_modules/slpjs/lib/slp.js:34
-  const slpSendOpReturn = wrapperlib.slp.buildSendOpReturn({
+  const slpSendOpReturn = slp.buildSendOpReturn({
     tokenIdHex,
     outputQtyArray: [amount]
   }, type);
@@ -73,7 +78,7 @@ function slpTransaction (data) {
   };
 
   // node_modules/slpjs/lib/slp.js:117
-  const rawTransactionHex = wrapperlib.slp.buildRawSendTx(config, type);
+  const rawTransactionHex = slp.buildRawSendTx(config, type);
   return rawTransactionHex;
 }
 
@@ -81,9 +86,9 @@ function slpTransaction (data) {
  * @param data
  */
 function bchTransaction (data) {
-  const privKey = wrapperlib.bitcore.PrivateKey(data.keys.WIF);
-  const toAddress = wrapperlib.bchaddr.isLegacyAddress(data.target) ? wrapperlib.bchaddr.toCashAddress(data.target) : data.target;
-  const fromAddress = wrapperlib.bchaddr.isLegacyAddress(data.source) ? wrapperlib.bchaddr.toCashAddress(data.source) : data.source;
+  const privKey = bitcore.PrivateKey(data.keys.WIF);
+  const toAddress = bchaddr.isLegacyAddress(data.target) ? bchaddr.toCashAddress(data.target) : data.target;
+  const fromAddress = bchaddr.isLegacyAddress(data.source) ? bchaddr.toCashAddress(data.source) : data.source;
 
   const hasValidMessage = typeof data.msg !== 'undefined' && data.msg !== null && data !== '';
 
@@ -93,7 +98,7 @@ function bchTransaction (data) {
 
   const utxos = data.unspent.unspents.map(transformBchUtxo(data));
 
-  const transaction = new wrapperlib.bitcore.Transaction()
+  const transaction = new bitcore.Transaction()
     .from(utxos)
     .change(fromAddress)
     .fee(fee)
@@ -110,22 +115,33 @@ function bchTransaction (data) {
   return signedTransaction;
 }
 
+/**
+ * @param WIF
+ */
 function mkPublicKey (WIF) {
   // reference: https://learnmeabitcoin.com/technical/public-key
-  const publicKey = wrapperlib.bitcore.PublicKey( wrapperlib.bitcore.PrivateKey(WIF) );
+  const publicKey = bitcore.PublicKey(bitcore.PrivateKey(WIF));
   return publicKey.toString();
 }
 
+/**
+ * @param WIF
+ * @param mode
+ */
 function mkAddressLegacy (WIF, mode) {
-  return wrapperlib.bchaddr.toLegacyAddress( mkAddress (WIF, mode) );
+  return bchaddr.toLegacyAddress(mkAddress(WIF, mode));
 }
 
+/**
+ * @param WIF
+ * @param mode
+ */
 function mkAddress (WIF, mode) {
-  const address = wrapperlib.bitcore.PrivateKey(WIF).toAddress();
-  const type = address.type === wrapperlib.bitcore.Address.PayToPublicKeyHash ? 'P2PKH' : 'P2SH';
+  const address = bitcore.PrivateKey(WIF).toAddress();
+  const type = address.type === bitcore.Address.PayToPublicKeyHash ? 'P2PKH' : 'P2SH';
   const hash = new Uint8Array(address.hashBuffer);
-  if (mode === 'slp') return wrapperlib.bchaddrSLP.toSlpAddress(wrapperlib.cashaddrjs.encode('bitcoincash', type, hash));
-  else return wrapperlib.cashaddrjs.encode(mode || 'bitcoincash', type, hash); //  mode = ['bitcoincash', 'bchtest', 'bchreg'];
+  if (mode === 'slp') return bchaddrSLP.toSlpAddress(cashaddrjs.encode('bitcoincash', type, hash));
+  else return cashaddrjs.encode(mode || 'bitcoincash', type, hash); //  mode = ['bitcoincash', 'bchtest', 'bchreg'];
 }
 
 const wrapper = {
@@ -136,7 +152,7 @@ const wrapper = {
       WIF: WIF,
       publicKey: mkPublicKey(WIF),
       addressLegacy: mkAddressLegacy(WIF, data.mode),
-      address: mkAddress(WIF, data.mode),
+      address: mkAddress(WIF, data.mode)
     };
   },
 
@@ -145,9 +161,9 @@ const wrapper = {
     WIF: data.privateKey,
     publicKey: mkPublicKey(data.privateKey),
     addressLegacy: mkAddressLegacy(data.privateKey, data.mode),
-    address: mkAddress(data.privateKey, data.mode),    
+    address: mkAddress(data.privateKey, data.mode)
   }),
-  
+
   // return private key
   privatekey: data => data.WIF,
 

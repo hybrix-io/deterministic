@@ -27,7 +27,7 @@ const wrapper = {
   keys: data => {
     const privateKey = mkPrivateKey(data.seed);
     return {
-      privateKey: privateKey,
+      privateKey,
       publicKey: mkPublicKey(privateKey),
       address: mkAddress(privateKey)
     };

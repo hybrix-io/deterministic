@@ -42,12 +42,10 @@ const wrapper = {
   publickey: data => data.publicKey,
 
   // return deterministic transaction data
-  transaction: data => {
+  transaction: (data,dataCallback,errorCallback) => {
     if (typeof data.unspent.unsignedTransactionBytes !== 'undefined') {
       return ardor.signTransactionBytes(data.unspent.unsignedTransactionBytes, data.keys.secretPhrase);
-    } else {
-      return null;
-    }
+    } else errorCallback('Failed to sign transaction. Missing unsignedTransactionBytes in unspent.');
   }
 };
 
