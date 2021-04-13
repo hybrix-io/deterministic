@@ -10,62 +10,78 @@ bitcoinjslib.networks = {...bitcoinjslib.networks, ...require('./coininfo/networ
 /**
  * @param data
  */
-function setNetwork (data) {
-  let network = 'bitcoin';
-  if (data.mode === 'bitcoincash') return '[UNDER MAINTENANCE]';
-  else if (data.mode === 'counterparty' || data.mode === 'omni') network = 'bitcoin';
-  else network = data.mode;
-  return network;
+function setNetwork (mode) {
+  return mode === 'counterparty' || mode === 'omni'
+   ? 'bitcoin'
+   : mode;
 }
 
-let wrapper = {
-
-  importPrivate: function (data) {
-    return {WIF: data.privateKey};
-  },
-
-  // create deterministic public and private keys based on a seed
-  keys: function (data) {
-    const network = setNetwork(data);
-    const hash = bitcoinjslib.crypto.sha256(data.seed);
-    const privk = hash; // BigInteger.fromBuffer(hash);
-    let keyPair;
-    if (network === 'bitcoin') {
-      keyPair = bitcoinjslib.ECPair.fromPrivateKey(privk); // backwards compatibility for BTC
-    } else {
-      keyPair = bitcoinjslib.ECPair.fromPrivateKey(privk, {
+function mkKeyPair (seed, network) {
+  const hash = bitcoinjslib.crypto.sha256(seed);
+  const keyPair = network === 'bitcoin'
+    ? bitcoinjslib.ECPair.fromPrivateKey(hash) // backwards compatibility for BTC
+    : bitcoinjslib.ECPair.fromPrivateKey(hash, {
         compressed: false,
         network: bitcoinjslib.networks[network]
       });
-    }
+  return keyPair;
+}
+
+function mkKeyPairFromWIF (WIF, network) {
+  return bitcoinjslib.ECPair.fromWIF(WIF, bitcoinjslib.networks[network]);
+}
+
+function mkPublicKey (keyPair) {
+  // reference: https://learnmeabitcoin.com/technical/public-key
+  return keyPair.publicKey.toString('hex');
+}
+
+function mkAddress (keyPair, network) {
+    const { address } = bitcoinjslib.payments.p2pkh({ pubkey: keyPair.publicKey, network: bitcoinjslib.networks[network] });
+    return address;
+}
+
+const wrapper = {
+
+  // create deterministic public and private keys based on a seed
+  keys: data => {
+    const network = setNetwork(data.mode);
+    const keyPair = mkKeyPair(data.seed, network);
     const WIF = keyPair.toWIF();
-    return {WIF};
+    const publicKey = mkPublicKey(keyPair);
+    const address = mkAddress(keyPair, network);
+
+    return {
+      WIF,
+      publicKey,
+      address
+    };
+  },
+
+  importPrivate: function (data) {
+    const network = setNetwork(data.mode);
+    const keyPair = mkKeyPairFromWIF(data.privateKey, network);
+    const publicKey = mkPublicKey(keyPair);
+    const address = mkAddress(keyPair, network);
+    return {
+      WIF:data.privateKey,
+      publicKey,
+      address
+    };
   },
 
   // generate a unique wallet address from a given public key
-  address: function (data) {
-    const network = setNetwork(data);
-    const keyPair = bitcoinjslib.ECPair.fromWIF(data.WIF, bitcoinjslib.networks[network]);
-    const { address } = bitcoinjslib.payments.p2pkh({ pubkey: keyPair.publicKey, network: bitcoinjslib.networks[network] });
-    return address;
-  },
+  address: data => data.address,
 
   // return public key
-  publickey: function (data) {
-    const network = setNetwork(data);
-    const keyPair = bitcoinjslib.ECPair.fromWIF(data.WIF, bitcoinjslib.networks[network]);
-    const publicKey = keyPair.publicKey.toString('hex');
-    return publicKey;
-  },
+  publickey: data => data.publicKey,
 
   // return private key
-  privatekey: function (data) {
-    return data.WIF;
-  },
+  privatekey: data => data.WIF,
 
-  transaction: function (data) {
-    // return deterministic transaction data
-    const network = setNetwork(data);
+  // return deterministic transaction data
+  transaction: data => {
+    const network = setNetwork(data.mode);
     const keyPair = bitcoinjslib.ECPair.fromWIF(data.keys.WIF, bitcoinjslib.networks[network]);
     const tx = new bitcoinjslib.TransactionBuilder(bitcoinjslib.networks[network]);
 
@@ -77,12 +93,12 @@ let wrapper = {
       // prepare raw transaction inputs
       let inamount = 0;
       for (let i in data.unspent.unspents) {
-        let input = data.unspent.unspents[i];
-        let hash = Buffer.from(input.txid.match(/.{2}/g).reverse().join(''), 'hex');
+        const input = data.unspent.unspents[i];
+        const hash = Buffer.from(input.txid.match(/.{2}/g).reverse().join(''), 'hex');
         tx.addInput(hash, input.txn);
         inamount += input.amount;
       }
-      if (inamount < MIN_REQUIRED) throw new Error('Insufficient funds');
+      if (inamount < MIN_REQUIRED) throw new Error(`Insufficient funds: ${inamount}, minimal required: ${MIN_REQUIRED}.`);
 
       // in case of Counterparty or Omni, add destination output
       if (data.target && typeof data.target === 'string') {
@@ -99,7 +115,7 @@ let wrapper = {
         const CounterJS = require('./CounterJS');
 
         // create Send
-        let scripthex = CounterJS.Message.createSend(
+        const scripthex = CounterJS.Message.createSend(
           CounterJS.util.assetNameToId(data.contract),
           parseInt(data.amount)
         );
@@ -120,13 +136,13 @@ let wrapper = {
       }
 
       // send back change
-      let outchange = parseInt(data.unspent.change) - MIN_REQUIRED; // fee is already being deducted when calculating unspents
-      if (outchange < 0) { outchange = 0; }
+      const outchange = Math.max(0, parseInt(data.unspent.change) - MIN_REQUIRED); // fee is already being deducted when calculating unspents
+
       tx.addOutput(bitcoinjslib.address.toOutputScript(data.source, bitcoinjslib.networks[network]), outchange);
     } else {
       // add inputs
-      for (let i in data.unspent.unspents) {
-        tx.addInput(data.unspent.unspents[i].txid, parseInt(data.unspent.unspents[i].txn));
+      for (const unspent of data.unspent.unspents) {
+        tx.addInput(unspent.txid, parseInt(unspent.txn));
       }
 
       let target;
@@ -141,13 +157,11 @@ let wrapper = {
 
       // send back change
       const outchange = parseInt(data.unspent.change); // fee is already being deducted when calculating unspents
-      if (outchange > 0) {
-        tx.addOutput(data.source, outchange);
-      }
+      if (outchange > 0) tx.addOutput(data.source, outchange);
     }
 
     // sign inputs
-    for (let i in data.unspent.unspents) {
+    for (const i in data.unspent.unspents) {
       tx.sign(parseInt(i), keyPair);
     }
     return tx.build().toHex();

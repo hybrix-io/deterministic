@@ -5,40 +5,49 @@ const Big = require('./node_modules/big.js/big.js');
 
 window.bnbCrypto = bnbCrypto;
 
-let wrapper = {
+function mkPrivateKey (seed) {
+  const longSecret = Buffer.from(seed, 'utf8'); // creating long format secret from seed
+  const hash = nacl.to_hex(nacl.crypto_hash_sha256(longSecret));
+  const secret = Buffer.from(hash.substr(0, 64), 'hex'); // buffer needs to be max 65
+  const mnemonicFromBuffer = bip39.entropyToMnemonic(secret);
+  const privateKey = bnbCrypto.getPrivateKeyFromMnemonic(mnemonicFromBuffer); // generation privKey from Mnemonic phrase
+  return privateKey;
+}
+
+function mkPublicKey (privateKey) {
+  return bnbCrypto.getPublicKeyFromPrivateKey(privateKey); // generating pubKey from privKey
+}
+
+function mkAddress (privateKey) {
+  return bnbCrypto.getAddressFromPublicKey( mkPublicKey(privateKey) , 'bnb');
+}
+
+const wrapper = {
   // create deterministic public and private keys based on a seed
   keys: data => {
-    const seed = Buffer.from(data.seed, 'utf8'); // creating long format secret from seed
-    const hash = nacl.to_hex(nacl.crypto_hash_sha256(seed));
-    const secret = Buffer.from(hash.substr(0, 64), 'hex'); // buffer needs to be max 65
-    const mnemonicFromBuffer = bip39.entropyToMnemonic(secret);
-    const privateKey = bnbCrypto.getPrivateKeyFromMnemonic(mnemonicFromBuffer); // generation privKey from Mnemonic phrase
-    const publicKey = bnbCrypto.getPublicKeyFromPrivateKey(privateKey); // generating pubKey from privKey
-
-    return {pubKey: publicKey, privKey: privateKey};
+    const privateKey = mkPrivateKey(data.seed);
+    return {
+      privateKey,
+      publicKey: mkPublicKey(privateKey),
+      address: mkAddress(privateKey)
+    };
   },
 
-  importPublic: data => {
-    return {publicKey: data.publicKey};
-  },
-
-  importPrivate: data => {
-    const publicKey = bnbCrypto.getPublicKeyFromPrivateKey(data.privateKey); // generating pubKey from privKey
-    return {pubKey: publicKey, privKey: data.privateKey};
-  },
-  // TODO sumKeys
-
-  // generate a unique wallet address from a given public key
-  address: data => {
-    const address = bnbCrypto.getAddressFromPublicKey(data.pubKey, 'bnb');
-    return address;
-  },
-
-  // return public key
-  publickey: data => data.pubKey,
+  // import private key
+  importPrivate: data => ({
+    privateKey: data.privateKey,
+    publicKey: mkPublicKey(data.privateKey),
+    address: mkAddress(privateKey)
+  }),
 
   // return private key
-  privatekey: data => data.privKey,
+  privatekey: data => data.privateKey,
+
+  // return public key
+  publickey: data => data.publicKey,
+
+  // generate a unique wallet address from a given public key
+  address: data => data.address,
 
   // generate a transaction
   transaction: (data, callback) => {
