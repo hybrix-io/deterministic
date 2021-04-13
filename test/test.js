@@ -21,8 +21,10 @@ const ops = stdio.getopt({
   username: {args: 1, description: 'Manually specify username. (Defaults to ' + DEFAULT_USERNAME + ')'},
   password: {args: 1, description: 'Manually specify password.'},
   compiled: {args: 0, description: 'Use compiled code.'},
+  build: {args: 0, description: 'Build and then use compiled code. (Set compiled to true)'},
   push: {key: 'p', args: 0, description: 'Push the signed transaction to the target chain. Restrictions such as transaction cost and funding requirements may apply. Also, you might want to specify --seed for this to work.'}
 });
+if(ops.build) ops.compiled = true;
 
 // if we were called without arguments, display a message
 if (!ops.symbol) {
@@ -154,6 +156,21 @@ function getKeysAndAddress (details, dataCallback, errorCallback) {
   }
 }
 
+function build(mode){
+  console.log('[.] Compiling module')
+  const module = mode.split('.')[0];
+  const {execSync} = require('child_process');
+  let output;
+  try {
+    output = execSync(`sh ../scripts/npm/compile_module.sh ${module} force`).toString();
+  }catch(error){
+    console.log('[i] Failed to compiled module ', error);
+    return;
+  }
+  console.log(output);
+  console.log('[i] Module compiled');
+}
+
 /**
  * @param result
  */
@@ -176,8 +193,10 @@ function outputResults (result) {
   console.log('[.] Factor             : ' + result.factor);
   console.log('[.] Fee-symbol         : ' + result['fee-symbol']);
   console.log('[.] Keygen-base        : ' + result['keygen-base']);
+
   if (typeof result.mode === 'string') {
     console.log('[.] Mode               : ' + result.mode);
+    if(ops.build) build(result.mode);
   } else {
     console.log('[!] Mode not defined');
   }
