@@ -1,6 +1,5 @@
 var common = {
   name: 'Decred',
-  per1: 1e8,
   unit: 'DCR'
 }
 
@@ -57,6 +56,6 @@ var test = Object.assign({}, {
 }, common)
 
 module.exports = {
-  main: main,
-  test: test
+  main,
+  test
 }

@@ -11,6 +11,7 @@ var main = Object.assign({}, {
   protocol: {
     magic: 0xdbb6c0fb
   },
+  bech32: 'ltc',
   seedsDns: [
     'dnsseed.litecointools.com',
     'dnsseed.litecoinpool.org',
@@ -33,7 +34,12 @@ var main = Object.assign({}, {
 
 var test = Object.assign({}, {
   hashGenesisBlock: 'f5ae71e26c74beacc88382716aced69cddf3dffff24f384e1808905e0188f68f',
+  bech32: 'tltc',
   versions: {
+    bip32: {
+      private: 0x0436ef7d,
+      public: 0x0436f6e1
+    },
     bip44: 1,
     private: 0xef,
     public: 0x6f,
@@ -43,6 +49,6 @@ var test = Object.assign({}, {
 }, common)
 
 module.exports = {
-  main: main,
-  test: test
+  main,
+  test
 }

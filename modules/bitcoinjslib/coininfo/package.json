@@ -1,45 +1,8 @@
 {
-  "_from": "coininfo",
-  "_id": "coininfo@4.3.0",
-  "_inBundle": false,
-  "_integrity": "sha512-y05vuWLvtIHkCdREhSbopaSzghsjukfJHkokcFGDkGOxL/wqEFokNHqDQS9CSag0tL/Oo7gMeGyUmeD3+MoyUA==",
-  "_location": "/coininfo",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "tag",
-    "registry": true,
-    "raw": "coininfo",
-    "name": "coininfo",
-    "escapedName": "coininfo",
-    "rawSpec": "",
-    "saveSpec": null,
-    "fetchSpec": "latest"
-  },
-  "_requiredBy": [
-    "#USER",
-    "/"
-  ],
-  "_resolved": "https://registry.npmjs.org/coininfo/-/coininfo-4.3.0.tgz",
-  "_shasum": "5795c842c3563510c9ddbf3ec5607f4152a80562",
-  "_spec": "coininfo",
-  "_where": "/home/user/Build/IoC/hybrixd/deterministic",
-  "bugs": {
-    "url": "https://github.com/cryptocoinjs/coininfo/issues"
-  },
-  "bundleDependencies": false,
-  "dependencies": {
-    "safe-buffer": "^5.1.1"
-  },
-  "deprecated": false,
+  "name": "coininfo",
+  "version": "5.2.0",
   "description": "JavaScript component for crypto currency specific information.",
-  "devDependencies": {
-    "standard": "*",
-    "tape": "^4.8.0"
-  },
-  "files": [
-    "lib"
-  ],
-  "homepage": "https://github.com/cryptocoinjs/coininfo#readme",
+  "license": "MIT",
   "keywords": [
     "cryptography",
     "crypto",
@@ -48,28 +11,37 @@
     "bitcoin gold",
     "litecoin",
     "viacoin",
+    "groestlcoin",
     "elliptic",
     "curve",
     "dogecoin",
     "blackcoin",
     "namecoin",
+    "denarius",
     "dash",
     "monacoin",
     "zcash",
     "vertcoin",
     "qtum"
   ],
-  "license": "MIT",
-  "main": "./lib/coininfo.js",
-  "name": "coininfo",
+  "devDependencies": {
+    "standard": "*",
+    "tape": "^4.8.0"
+  },
   "repository": {
-    "url": "git+https://github.com/cryptocoinjs/coininfo.git",
+    "url": "https://github.com/cryptocoinjs/coininfo",
     "type": "git"
   },
+  "main": "./lib/coininfo.js",
+  "files": [
+    "lib"
+  ],
   "scripts": {
     "lint": "standard",
     "test": "npm run lint && npm run unit",
     "unit": "tape test/**/*.js"
   },
-  "version": "4.3.0"
+  "dependencies": {
+    "safe-buffer": "^5.1.1"
+  }
 }
