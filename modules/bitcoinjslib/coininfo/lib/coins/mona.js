@@ -12,6 +12,7 @@ var main = Object.assign({}, {
   protocol: {
     magic: 0xdbb6c0fb
   },
+  bech32: 'mona',
   seedsDns: [
     'dnsseed.monacoin.org'
   ],
@@ -36,6 +37,7 @@ var test = Object.assign({}, {
   protocol: {
     magic: 0xf1c8d2fd
   },
+  bech32: 'tmona',
   seedsDns: [
     'testnet-dnsseed.monacoin.org'
   ],
@@ -53,6 +55,6 @@ var test = Object.assign({}, {
 }, common)
 
 module.exports = {
-  main: main,
-  test: test
+  main,
+  test
 }

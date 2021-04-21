@@ -8,20 +8,31 @@
 var coininfo = require('../coininfo');
 
 var networknames = [
- 'bitcoin','bitcoin_gold',
+ 'bitcoin',
+ //'bitcoin_cash',
+ 'bitcoin_gold',
  'blackcoin',
- 'dash','decred','dogecoin',
+ //'c0ban',
+ 'dash',
+ 'decred',
+ //'denarius',
+ //'digibyte',
+ 'dogecoin',
  'florincoin',
+ 'groestlcoin',
  'litecoin',
  'monacoin',
  'namecoin',
  'nubits',
- 'qtum',
- 'viacoin',
-];
-
  //'peercoin',  no BIP32 support?
  //'reddcoin',  no BIP32 support?
+ 'qtum',
+ //'ravencoin',
+ //'vertcoin',
+ 'viacoin',
+ //'x42',
+ //'zcash',
+];
 
 var curr
 var frmt
@@ -44,4 +55,3 @@ for(var i=0;i<networknames.length;i++) {
 }
 
 module.exports = networks;
-

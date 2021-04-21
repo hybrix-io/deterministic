@@ -6,7 +6,8 @@
 var common = {
   name: 'Bitcoin',
   per1: 1e8,
-  unit: 'BTC'
+  unit: 'BTC',
+  messagePrefix: '\x18Bitcoin Signed Message:\n'
 }
 
 var main = Object.assign({}, {
@@ -18,14 +19,16 @@ var main = Object.assign({}, {
     // pchMessageStart
     magic: 0xd9b4bef9 // careful, sent over wire as little endian
   },
+  bech32: 'bc',
   // vSeeds
   seedsDns: [
     'seed.bitcoin.sipa.be',
     'dnsseed.bluematt.me',
-    'dnsseed.bitcoin.dashjr.org',
     'seed.bitcoinstats.com',
-    'bitseed.xf2.org',
-    'seed.bitcoin.jonasschnelli.ch'
+    'seed.bitcoin.jonasschnelli.ch',
+    'seed.btc.petertodd.org',
+    'seed.bitcoin.sprovoost.nl',
+    'dnsseed.emzy.de'
   ],
   // base58Prefixes
   versions: {
@@ -47,6 +50,7 @@ var test = Object.assign({}, {
   protocol: {
     magic: 0x0709110b
   },
+  bech32: 'tb',
   seedsDns: [
     'testnet-seed.alexykot.me',
     'testnet-seed.bitcoin.schildbach.de',
@@ -72,6 +76,7 @@ var regtest = Object.assign({}, {
   protocol: {
     magic: 0xdab5bffa
   },
+  bech32: 'bcrt',
   seedsDns: [],
   versions: {
     bip32: {
@@ -85,8 +90,31 @@ var regtest = Object.assign({}, {
   }
 }, common)
 
+// source: https://github.com/btcsuite/btcd/blob/6867ff32788a1beb9d148e414d7f84f50958f0d2/chaincfg/params.go#L508
+var simnet = Object.assign({}, {
+  hashGenesisBlock: 'f67ad7695d9b662a72ff3d8edbbb2de0bfa67b13974bb9910d116d5cbd863e68',
+  port: 18555,
+  portRpc: 18556,
+  protocol: {
+    magic: 0x12141c16
+  },
+  bech32: 'sb',
+  seedsDns: [],
+  versions: {
+    bip32: {
+      private: 0x0420b900,
+      public: 0x0420bd3a
+    },
+    bip44: 115,
+    private: 0x64,
+    public: 0x3f,
+    scripthash: 0x7b
+  }
+}, common)
+
 module.exports = {
-  main: main,
-  test: test,
-  regtest: regtest
+  main,
+  test,
+  regtest,
+  simnet
 }
