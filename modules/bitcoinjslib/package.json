@@ -16,6 +16,7 @@
     "bitcoinjs-lib": "^5.2.0",
     "bs58check": "^2.1.2",
     "buffer-reverse": "^1.0.1",
+    "coininfo": "^5.1.0",
     "ecurve": "^1.0.6",
     "left-pad": "*",
     "long": "^4.0.0",
