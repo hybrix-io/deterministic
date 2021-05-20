@@ -5,40 +5,56 @@
 // [!] Browserify this and save to deterministic.js.lzma to enable sending it from hybrixd to the browser!
 //
 const bitcoinjslib = require('./node_modules/bitcoinjs-lib/');
-bitcoinjslib.networks = {...bitcoinjslib.networks, ...require('./coininfo/networks.js')}; // inject alt coin network definitions
+bitcoinjslib.networks = {...bitcoinjslib.networks, ...require('./networks.js')}; // inject alt coin network definitions
 
 /**
  * @param data
+ * @param mode
  */
 function setNetwork (mode) {
   return mode === 'counterparty' || mode === 'omni'
-   ? 'bitcoin'
-   : mode;
+    ? 'bitcoin'
+    : mode;
 }
 
+/**
+ * @param seed
+ * @param network
+ */
 function mkKeyPair (seed, network) {
   const hash = bitcoinjslib.crypto.sha256(seed);
   const keyPair = network === 'bitcoin'
     ? bitcoinjslib.ECPair.fromPrivateKey(hash) // backwards compatibility for BTC
     : bitcoinjslib.ECPair.fromPrivateKey(hash, {
-        compressed: false,
-        network: bitcoinjslib.networks[network]
-      });
+      compressed: false,
+      network: bitcoinjslib.networks[network]
+    });
   return keyPair;
 }
 
+/**
+ * @param WIF
+ * @param network
+ */
 function mkKeyPairFromWIF (WIF, network) {
   return bitcoinjslib.ECPair.fromWIF(WIF, bitcoinjslib.networks[network]);
 }
 
+/**
+ * @param keyPair
+ */
 function mkPublicKey (keyPair) {
   // reference: https://learnmeabitcoin.com/technical/public-key
   return keyPair.publicKey.toString('hex');
 }
 
+/**
+ * @param keyPair
+ * @param network
+ */
 function mkAddress (keyPair, network) {
-    const { address } = bitcoinjslib.payments.p2pkh({ pubkey: keyPair.publicKey, network: bitcoinjslib.networks[network] });
-    return address;
+  const { address } = bitcoinjslib.payments.p2pkh({ pubkey: keyPair.publicKey, network: bitcoinjslib.networks[network] });
+  return address;
 }
 
 const wrapper = {
@@ -64,7 +80,7 @@ const wrapper = {
     const publicKey = mkPublicKey(keyPair);
     const address = mkAddress(keyPair, network);
     return {
-      WIF:data.privateKey,
+      WIF: data.privateKey,
       publicKey,
       address
     };
@@ -92,7 +108,7 @@ const wrapper = {
 
       // prepare raw transaction inputs
       let inamount = 0;
-      for (let i in data.unspent.unspents) {
+      for (const i in data.unspent.unspents) {
         const input = data.unspent.unspents[i];
         const hash = Buffer.from(input.txid.match(/.{2}/g).reverse().join(''), 'hex');
         tx.addInput(hash, input.txn);

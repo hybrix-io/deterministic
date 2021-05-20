@@ -2,14 +2,18 @@ var Buffer = require('safe-buffer').Buffer
 
 // annoyingly, this is for browserify
 var coins = [
+  require('./coins/bch'),
   require('./coins/blk'),
   require('./coins/btc'),
   require('./coins/btg'),
+  require('./coins/cbn'),
+  require('./coins/city'),
   require('./coins/dash'),
+  require('./coins/dnr'),
   require('./coins/dcr'),
   require('./coins/dgb'),
   require('./coins/doge'),
-  require('./coins/flo'),
+  require('./coins/grs'),
   require('./coins/ltc'),
   require('./coins/via'),
   require('./coins/mona'),
@@ -17,8 +21,10 @@ var coins = [
   require('./coins/nmc'),
   require('./coins/ppc'),
   require('./coins/qtum'),
+  require('./coins/rvn'),
   require('./coins/rdd'),
   require('./coins/vtc'),
+  require('./coins/x42'),
   require('./coins/zec')
 ]
 
@@ -49,6 +55,14 @@ coins.forEach(function (coin) {
     supportedCoins[unit + '-regtest'] = coin.regtest
     supportedCoins[name + '-regtest'] = coin.regtest
   }
+
+  if (coin.simnet) {
+    coin.simnet.testnet = true
+    coin.simnet.toBitcoinJS = toBitcoinJS.bind(coin.simnet)
+    coin.simnet.toBitcore = toBitcore.bind(coin.simnet)
+    supportedCoins[unit + '-simnet'] = coin.simnet
+    supportedCoins[name + '-simnet'] = coin.simnet
+  }
 })
 
 function coininfo (input) {
@@ -67,13 +81,16 @@ coins.forEach(function (coin) {
 
 function toBitcoinJS () {
   return Object.assign({}, this, {
+    messagePrefix: this.messagePrefix || ('\x19' + this.name + ' Signed Message:\n'),
+    bech32: this.bech32,
     bip32: {
-      public: this.versions.bip32.public,
-      private: this.versions.bip32.private
+      public: (this.versions.bip32 || {}).public,
+      private: (this.versions.bip32 || {}).private
     },
     pubKeyHash: this.versions.public,
     scriptHash: this.versions.scripthash,
     wif: this.versions.private,
+    dustThreshold: null // TODO
   })
 }
 
@@ -89,8 +106,8 @@ function toBitcore () {
     pubkeyhash: this.versions.public,
     privatekey: this.versions.private,
     scripthash: this.versions.scripthash,
-    xpubkey: this.versions.bip32.public,
-    xprivkey: this.versions.bip32.private,
+    xpubkey: (this.versions.bip32 || {}).public,
+    xprivkey: (this.versions.bip32 || {}).private,
     networkMagic: nm,
     port: this.port,
     dnsSeeds: this.seedsDns || []
