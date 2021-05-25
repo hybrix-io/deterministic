@@ -18,6 +18,7 @@ var main = Object.assign({}, {
     // pchMessageStart
     magic: 0xfac3b6da // careful, sent over wire as little endian
   },
+  bech32: 'dgb',
   // vSeeds
   seedsDns: [
     'seed.digibyte.io',
@@ -29,9 +30,9 @@ var main = Object.assign({}, {
     bip44: 0x80000014,
     private: 0x80,
     public: 0x1e,
-    scripthash: 0x05,
-    scripthash2: 0x3f // S-prefix addresses
+    scripthash: 0x3f, // new 'S' prefix
+    scripthash2: 0x05 // old '3' prefix
   }
 }, common)
 
-module.exports = { main: main }
+module.exports = { main }
