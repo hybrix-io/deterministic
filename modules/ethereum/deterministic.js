@@ -105,8 +105,8 @@ const deterministic = {
 
     const txParams = {
       nonce: toHex(data.unspent.nonce),
-      gasPrice: toHex(atomicGasPrice.ceil().toFixed()),
-      gasLimit: toHex(gasUsage.ceil().toFixed())
+      gasPrice: toHex(atomicGasPrice.ceil().toFixed(0)),
+      gasLimit: toHex(gasUsage.ceil().toFixed(0))
     };
 
     if (data.mode === 'main') { // Base ETH mode
