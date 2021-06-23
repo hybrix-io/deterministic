@@ -6,6 +6,8 @@
 //
 
 const bitcore = require('bitcore-lib-cash');
+delete global._bitcoreCash;
+
 const cashaddrjs = require('cashaddrjs');
 const slpjs = require('slpjs');
 const bchaddr = require('bchaddrjs');
