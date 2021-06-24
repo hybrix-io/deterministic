@@ -24,7 +24,7 @@ const ops = stdio.getopt({
   build: {args: 0, description: 'Build and then use compiled code. (Set compiled to true)'},
   push: {key: 'p', args: 0, description: 'Push the signed transaction to the target chain. Restrictions such as transaction cost and funding requirements may apply. Also, you might want to specify --seed for this to work.'}
 });
-if(ops.build) ops.compiled = true;
+if (ops.build) ops.compiled = true;
 
 // if we were called without arguments, display a message
 if (!ops.symbol) {
@@ -156,14 +156,17 @@ function getKeysAndAddress (details, dataCallback, errorCallback) {
   }
 }
 
-function build(mode){
-  console.log('[.] Compiling module')
+/**
+ * @param mode
+ */
+function build (mode) {
+  console.log('[.] Compiling module');
   const module = mode.split('.')[0];
   const {execSync} = require('child_process');
   let output;
   try {
     output = execSync(`sh ../scripts/npm/compile_module.sh ${module} force`).toString();
-  }catch(error){
+  } catch (error) {
     console.log('[i] Failed to compiled module ', error);
     return;
   }
@@ -196,7 +199,7 @@ function outputResults (result) {
 
   if (typeof result.mode === 'string') {
     console.log('[.] Mode               : ' + result.mode);
-    if(ops.build) build(result.mode);
+    if (ops.build) build(result.mode);
   } else {
     console.log('[!] Mode not defined');
   }
@@ -299,6 +302,8 @@ function outputAndCheckHash (signedTrxDataAndHash) {
       console.log('[i] Test Hash          :', 'NOT AVAILABLE');
     }
   }
+  // console.log('signedTrxDataAndHash', signedTrxDataAndHash);
+  return signedTrxDataAndHash.signedTrxData;
 }
 
 /**
@@ -371,8 +376,8 @@ hybrix.sequential(
 
     // When the optional --push flag is specified, the transaction is pushed to the target chain.
     // Restrictions such as transaction cost and funding requirements may apply.
-    optionalPushToTargetChain
-
+    optionalPushToTargetChain,
+    'parallel'
   ],
   result => {
     console.log(`\n[v] Successfully ran test for symbol ${ops.symbol}\n`);
