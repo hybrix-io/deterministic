@@ -103,7 +103,7 @@ const deterministic = {
     // here we allow overriding auto-calculated atomic gasprice, so edge-cases like token.tomo.euro.json
     // can be made to work (provides its own TRC21 mechanism of paying fees)
     const atomicGasPrice = data.unspent.hasOwnProperty('atomicGasPrice')
-                             ?data.unspent.atomicGasPrice
+                             ?new Decimal(data.unspent.atomicGasPrice)
                              :atomicFee.div(gasUsage);
     // DEBUG console.log('atomicGasPrice By dividing atomicFee through gasUsage', atomicGasPrice.toString())
     // DEBUG console.log('Gasprice passed throug unspents', data.unspent.gasPrice)
